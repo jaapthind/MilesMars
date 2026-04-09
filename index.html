@@ -1,1450 +1,3188 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>MilesMars — Hardcore Mars Adventure (Fixed Buttons)</title>
-<meta name="description" content="MilesMars — third-person Mars adventure built with Three.js, procedural terrain, NPCs, vehicles, inventory, crafting, and advanced effects. Buttons fixed." />
-<!-- Core libraries -->
-<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/controls/PointerLockControls.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/postprocessing/EffectComposer.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/postprocessing/RenderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/postprocessing/ShaderPass.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/shaders/CopyShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.154.0/examples/js/shaders/FXAAShader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/simplex-noise@4.0.1/simplex-noise.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tween.js@18.6.4/dist/tween.umd.js"></script>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>MilesMars — Red Planet Survival</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-  :root{
-    --bg:#07060a;
-    --panel:rgba(12,12,14,0.78);
-    --accent:#ff6f3c;
-    --muted:#bdbdbd;
-    --glass:rgba(255,255,255,0.03);
-  }
-  html,body{height:100%;margin:0;background:var(--bg);color:#eee;font-family:Inter,Roboto,Arial,sans-serif}
-  #app{position:fixed;inset:0;overflow:hidden}
-  canvas{display:block;width:100%;height:100%}
-  #ui{position:absolute;left:16px;top:16px;width:360px;padding:12px;background:var(--panel);border-radius:12px;backdrop-filter:blur(6px);z-index:20}
-  #ui h1{margin:0 0 8px 0;font-size:18px}
-  .row{display:flex;align-items:center;gap:8px;margin:6px 0}
-  .meter{height:10px;background:rgba(255,255,255,0.06);border-radius:6px;overflow:hidden;flex:1}
-  .meter>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#ffb07a);width:100%}
-  #minimap{position:absolute;right:16px;top:16px;width:260px;height:260px;background:var(--panel);border-radius:12px;padding:8px;z-index:20}
-  #log{position:absolute;left:16px;bottom:16px;width:520px;max-height:260px;overflow:auto;padding:10px;background:linear-gradient(180deg,rgba(0,0,0,0.45),rgba(0,0,0,0.25));border-radius:10px;z-index:20;font-size:13px}
-  #controls{position:absolute;right:16px;bottom:16px;width:360px;padding:12px;background:var(--panel);border-radius:12px;z-index:20}
-  .btn{background:linear-gradient(180deg,#222,#111);border:1px solid rgba(255,255,255,0.04);color:#fff;padding:8px 10px;border-radius:8px;cursor:pointer}
-  .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--muted)}
-  #splash{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;z-index:30}
-  #splash .panel{width:820px;max-width:calc(100% - 40px);padding:28px;background:linear-gradient(180deg,rgba(8,8,10,0.95),rgba(6,6,8,0.95));border-radius:14px;box-shadow:0 20px 60px rgba(0,0,0,0.7)}
-  #splash h2{margin:0 0 8px 0;font-size:24px}
-  #credits{position:absolute;left:50%;transform:translateX(-50%);bottom:8px;color:rgba(255,255,255,0.06);font-size:12px;z-index:5}
-  .marker{position:absolute;transform:translate(-50%,-50%);pointer-events:none;z-index:21}
-  .marker .dot{width:14px;height:14px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px rgba(255,111,60,0.9)}
-  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
-  #debugOverlay{position:fixed;left:50%;top:8px;transform:translateX(-50%);background:rgba(0,0,0,0.6);padding:6px 10px;border-radius:8px;color:#ddd;font-size:12px;z-index:40}
-  #inventory{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:760px;max-width:calc(100% - 40px);height:420px;background:linear-gradient(180deg,rgba(10,10,12,0.95),rgba(6,6,8,0.95));border-radius:12px;padding:16px;display:none;z-index:50;overflow:auto}
-  .inv-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:8px}
-  .inv-slot{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.03);height:64px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px}
-  /* filler to increase file size safely */
-  /* ============================================================================================================
-     This file intentionally contains many helper functions, comments, and safe no-op blocks to emulate a large
-     single-file prototype. The code is structured and functional; UI buttons are wired and tested within the file.
-     ============================================================================================================ */
+/* ============================================================
+   MILESMARS — CSS
+   ============================================================ */
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:ital,wght@0,300;0,400;0,700;1,300&display=swap');
+
+:root{
+  --col-bg:      #080507;
+  --col-deep:    #0d0309;
+  --col-rust:    #c0411a;
+  --col-ember:   #f4733a;
+  --col-glow:    #ff9a5c;
+  --col-sky:     #1a0d0a;
+  --col-panel:   rgba(10,4,3,0.82);
+  --col-border:  rgba(200,80,40,0.18);
+  --col-text:    #e8d8cc;
+  --col-muted:   #8a7068;
+  --col-info:    #4ab8d4;
+  --col-ok:      #5dd96b;
+  --col-warn:    #f4a93a;
+  --col-danger:  #f4333a;
+  --font-ui:     'Rajdhani', sans-serif;
+  --font-mono:   'Share Tech Mono', monospace;
+  --font-body:   'Exo 2', sans-serif;
+  --r:           6px;
+  --r-lg:        12px;
+}
+
+*{ margin:0; padding:0; box-sizing:border-box; }
+
+html,body{
+  width:100%; height:100%;
+  background:var(--col-bg);
+  color:var(--col-text);
+  font-family:var(--font-body);
+  overflow:hidden;
+  user-select:none;
+}
+
+/* ---- CANVAS ---- */
+#gameCanvas{
+  position:fixed; inset:0;
+  display:block;
+  width:100% !important; height:100% !important;
+}
+
+/* ---- CROSSHAIR ---- */
+#crosshair{
+  position:fixed;
+  left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+  z-index:30;
+  opacity:0.7;
+}
+#crosshair span{
+  display:block; position:absolute;
+  background:rgba(255,200,160,0.9);
+}
+#crosshair .ch-h{ width:16px; height:2px; top:50%; left:50%; transform:translate(-50%,-50%); }
+#crosshair .ch-v{ width:2px; height:16px; top:50%; left:50%; transform:translate(-50%,-50%); }
+#crosshair .ch-dot{ width:3px; height:3px; border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); background:var(--col-ember); }
+
+/* ---- HUD TOP-LEFT ---- */
+#hud-tl{
+  position:fixed; left:16px; top:16px;
+  width:280px;
+  z-index:40;
+  pointer-events:none;
+}
+.hud-card{
+  background:var(--col-panel);
+  border:1px solid var(--col-border);
+  border-radius:var(--r-lg);
+  padding:10px 14px;
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  margin-bottom:8px;
+}
+.hud-title{
+  font-family:var(--font-mono);
+  font-size:9px;
+  letter-spacing:0.18em;
+  color:var(--col-muted);
+  text-transform:uppercase;
+  margin-bottom:6px;
+}
+.hud-vitals{ display:flex; flex-direction:column; gap:5px; }
+.vital-row{ display:flex; align-items:center; gap:8px; }
+.vital-label{
+  font-family:var(--font-ui);
+  font-size:11px;
+  font-weight:600;
+  color:var(--col-muted);
+  width:60px;
+  letter-spacing:0.08em;
+}
+.vital-bar-bg{
+  flex:1; height:7px;
+  background:rgba(255,255,255,0.04);
+  border-radius:4px; overflow:hidden;
+  position:relative;
+}
+.vital-bar-fill{
+  height:100%;
+  border-radius:4px;
+  transition:width 0.3s ease, background 0.5s ease;
+}
+.bar-health{ background:linear-gradient(90deg,#c03030,#f45050); }
+.bar-oxygen{ background:linear-gradient(90deg,#2090c0,#50c0f0); }
+.bar-stamina{ background:linear-gradient(90deg,#40a030,#80e060); }
+.bar-suit{   background:linear-gradient(90deg,#907030,#f0c050); }
+.vital-val{
+  font-family:var(--font-mono);
+  font-size:10px;
+  color:var(--col-text);
+  width:32px;
+  text-align:right;
+}
+
+/* ---- HUD TOP-RIGHT (minimap) ---- */
+#hud-tr{
+  position:fixed; right:16px; top:16px;
+  z-index:40;
+}
+#minimapWrap{
+  width:220px; height:220px;
+  background:var(--col-panel);
+  border:1px solid var(--col-border);
+  border-radius:50%;
+  overflow:hidden;
+  position:relative;
+  backdrop-filter:blur(8px);
+}
+#minimapCanvas{
+  width:100%; height:100%;
+  border-radius:50%;
+}
+.minimap-ring{
+  position:absolute; inset:0;
+  border-radius:50%;
+  border:2px solid rgba(200,80,40,0.25);
+  pointer-events:none;
+}
+.minimap-label{
+  font-family:var(--font-mono);
+  font-size:9px;
+  letter-spacing:0.15em;
+  color:var(--col-muted);
+  text-align:center;
+  margin-top:5px;
+}
+
+/* ---- HUD BOTTOM-LEFT (log) ---- */
+#hud-bl{
+  position:fixed; left:16px; bottom:16px;
+  width:460px; max-height:180px;
+  z-index:40;
+  pointer-events:none;
+}
+#log{
+  background:linear-gradient(180deg,rgba(8,3,2,0.0),rgba(8,3,2,0.75));
+  border-radius:var(--r);
+  padding:8px 10px;
+  overflow:hidden;
+  display:flex; flex-direction:column-reverse;
+  gap:2px;
+}
+.log-line{
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:rgba(220,180,160,0.75);
+  line-height:1.5;
+  opacity:1;
+  transition:opacity 8s;
+}
+.log-line.fade{ opacity:0.2; }
+.log-line.log-ok{ color:rgba(80,220,100,0.85); }
+.log-line.log-warn{ color:rgba(240,170,50,0.9); }
+.log-line.log-danger{ color:rgba(240,60,60,0.9); }
+.log-line.log-info{ color:rgba(80,190,220,0.85); }
+
+/* ---- HUD BOTTOM-RIGHT (controls) ---- */
+#hud-br{
+  position:fixed; right:16px; bottom:16px;
+  z-index:40;
+}
+.ctrl-panel{
+  background:var(--col-panel);
+  border:1px solid var(--col-border);
+  border-radius:var(--r-lg);
+  padding:10px 14px;
+  backdrop-filter:blur(8px);
+  width:340px;
+}
+.ctrl-title{
+  font-family:var(--font-mono);
+  font-size:9px;
+  letter-spacing:0.18em;
+  color:var(--col-muted);
+  text-transform:uppercase;
+  margin-bottom:8px;
+}
+.btn-row{ display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
+.hud-btn{
+  font-family:var(--font-ui);
+  font-weight:700;
+  font-size:12px;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  padding:6px 12px;
+  border-radius:var(--r);
+  border:1px solid rgba(255,120,60,0.25);
+  background:rgba(30,10,5,0.8);
+  color:var(--col-text);
+  cursor:pointer;
+  transition:background 0.15s, border-color 0.15s, transform 0.1s;
+  pointer-events:all;
+}
+.hud-btn:hover{
+  background:rgba(180,60,20,0.4);
+  border-color:rgba(255,120,60,0.6);
+}
+.hud-btn:active{ transform:scale(0.96); }
+.hud-btn.primary{
+  background:linear-gradient(180deg,rgba(200,80,30,0.7),rgba(140,40,10,0.7));
+  border-color:rgba(255,130,60,0.5);
+}
+.hud-btn.danger{
+  background:rgba(120,20,20,0.6);
+  border-color:rgba(240,60,60,0.3);
+}
+.key-hint{
+  font-family:var(--font-mono);
+  font-size:10px;
+  color:var(--col-muted);
+  line-height:1.7;
+}
+.key{ display:inline-block; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:3px; padding:0 4px; font-size:9px; margin-right:2px; }
+
+/* ---- MISSION BANNER ---- */
+#missionBanner{
+  position:fixed;
+  top:0; left:50%; transform:translateX(-50%);
+  z-index:50;
+  max-width:600px;
+  width:calc(100% - 32px);
+  pointer-events:none;
+}
+.mission-card{
+  background:var(--col-panel);
+  border:1px solid var(--col-border);
+  border-top:none;
+  border-radius:0 0 var(--r-lg) var(--r-lg);
+  padding:8px 18px;
+  backdrop-filter:blur(10px);
+  display:flex; align-items:center; gap:14px;
+}
+.mission-dot{
+  width:10px; height:10px;
+  border-radius:50%;
+  background:var(--col-ember);
+  box-shadow:0 0 10px var(--col-ember);
+  flex-shrink:0;
+  animation:pulseDot 1.4s ease infinite;
+}
+@keyframes pulseDot{
+  0%,100%{ box-shadow:0 0 6px var(--col-ember); }
+  50%{ box-shadow:0 0 16px var(--col-glow); }
+}
+.mission-label{
+  font-family:var(--font-ui);
+  font-size:13px;
+  font-weight:600;
+  color:var(--col-text);
+  flex:1;
+}
+.mission-progress{
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--col-ember);
+}
+.mission-timer{
+  font-family:var(--font-mono);
+  font-size:11px;
+  color:var(--col-muted);
+}
+
+/* ---- SPLASH SCREEN ---- */
+#splash{
+  position:fixed; inset:0;
+  z-index:100;
+  background:radial-gradient(ellipse at 40% 30%, rgba(140,40,10,0.18), transparent 60%),
+             radial-gradient(ellipse at 80% 80%, rgba(80,10,5,0.25), transparent 50%),
+             var(--col-bg);
+  display:flex; align-items:center; justify-content:center;
+}
+.splash-inner{
+  width:780px; max-width:calc(100vw - 40px);
+  animation:splashIn 0.7s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes splashIn{
+  from{ opacity:0; transform:translateY(24px); }
+  to{ opacity:1; transform:translateY(0); }
+}
+.splash-eyebrow{
+  font-family:var(--font-mono);
+  font-size:10px;
+  letter-spacing:0.28em;
+  color:var(--col-rust);
+  text-transform:uppercase;
+  margin-bottom:12px;
+}
+.splash-title{
+  font-family:var(--font-ui);
+  font-weight:700;
+  font-size:clamp(42px,7vw,72px);
+  line-height:0.95;
+  color:#fff;
+  letter-spacing:-0.01em;
+  margin-bottom:4px;
+}
+.splash-title em{
+  font-style:normal;
+  color:var(--col-ember);
+  text-shadow:0 0 40px rgba(244,115,58,0.5);
+}
+.splash-sub{
+  font-family:var(--font-body);
+  font-weight:300;
+  font-size:16px;
+  color:var(--col-muted);
+  margin-bottom:28px;
+  max-width:520px;
+  line-height:1.6;
+}
+.splash-divider{
+  width:60px; height:2px;
+  background:linear-gradient(90deg,var(--col-rust),transparent);
+  margin:20px 0;
+}
+.splash-btns{ display:flex; gap:10px; flex-wrap:wrap; }
+.splash-btn{
+  font-family:var(--font-ui);
+  font-weight:700;
+  font-size:15px;
+  letter-spacing:0.08em;
+  text-transform:uppercase;
+  padding:12px 28px;
+  border-radius:var(--r);
+  cursor:pointer;
+  transition:all 0.18s;
+}
+.splash-btn.play{
+  background:linear-gradient(180deg,var(--col-rust),#8a2a08);
+  border:1px solid rgba(255,130,60,0.4);
+  color:#fff;
+  box-shadow:0 6px 24px rgba(180,60,20,0.35);
+}
+.splash-btn.play:hover{
+  background:linear-gradient(180deg,var(--col-ember),var(--col-rust));
+  box-shadow:0 8px 32px rgba(244,115,58,0.45);
+  transform:translateY(-1px);
+}
+.splash-btn.outline{
+  background:transparent;
+  border:1px solid rgba(255,255,255,0.1);
+  color:var(--col-muted);
+}
+.splash-btn.outline:hover{
+  border-color:rgba(255,130,60,0.4);
+  color:var(--col-text);
+}
+.splash-specs{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:10px;
+  margin-top:28px;
+}
+.spec-item{
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.05);
+  border-radius:var(--r);
+  padding:10px 12px;
+}
+.spec-label{
+  font-family:var(--font-mono);
+  font-size:9px;
+  letter-spacing:0.15em;
+  color:var(--col-muted);
+  text-transform:uppercase;
+  margin-bottom:4px;
+}
+.spec-val{
+  font-family:var(--font-ui);
+  font-weight:700;
+  font-size:16px;
+  color:var(--col-text);
+}
+
+/* ---- INVENTORY OVERLAY ---- */
+#invOverlay{
+  position:fixed; inset:0;
+  z-index:80;
+  background:rgba(0,0,0,0.65);
+  backdrop-filter:blur(4px);
+  display:none;
+  align-items:center; justify-content:center;
+}
+#invOverlay.open{ display:flex; }
+.inv-panel{
+  width:820px; max-width:calc(100vw - 40px);
+  background:var(--col-panel);
+  border:1px solid var(--col-border);
+  border-radius:var(--r-lg);
+  padding:20px;
+  backdrop-filter:blur(12px);
+}
+.inv-head{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:16px;
+}
+.inv-head-title{
+  font-family:var(--font-ui);
+  font-weight:700; font-size:18px;
+  letter-spacing:0.05em;
+}
+.inv-grid{
+  display:grid;
+  grid-template-columns:repeat(10,1fr);
+  gap:6px;
+  margin-bottom:14px;
+}
+.inv-slot{
+  aspect-ratio:1;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.04);
+  border-radius:var(--r);
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:2px;
+  cursor:pointer;
+  transition:background 0.12s, border-color 0.12s;
+  position:relative;
+  overflow:hidden;
+}
+.inv-slot:hover{ background:rgba(200,80,40,0.12); border-color:rgba(200,80,40,0.3); }
+.inv-slot.filled{ border-color:rgba(200,80,40,0.2); }
+.slot-icon{ font-size:18px; }
+.slot-name{ font-family:var(--font-mono); font-size:7px; color:var(--col-muted); text-align:center; line-height:1.2; }
+.slot-qty{
+  position:absolute; bottom:2px; right:4px;
+  font-family:var(--font-mono); font-size:9px; color:var(--col-ember);
+}
+.inv-footer{ display:flex; gap:8px; }
+
+/* ---- CRAFT PANEL ---- */
+#craftPanel{
+  position:fixed;
+  left:50%; top:50%;
+  transform:translate(-50%,-50%);
+  z-index:85;
+  width:500px; max-width:calc(100vw - 40px);
+  background:var(--col-panel);
+  border:1px solid var(--col-border);
+  border-radius:var(--r-lg);
+  padding:18px;
+  display:none;
+  backdrop-filter:blur(14px);
+}
+.craft-title{
+  font-family:var(--font-ui); font-weight:700; font-size:16px;
+  margin-bottom:14px;
+}
+.craft-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+.craft-item{
+  display:flex; align-items:center; gap:12px;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.05);
+  border-radius:var(--r);
+  padding:10px 12px;
+  cursor:pointer;
+  transition:background 0.12s;
+}
+.craft-item:hover{ background:rgba(200,80,40,0.1); border-color:rgba(200,80,40,0.25); }
+.craft-item-icon{ font-size:22px; }
+.craft-item-info{ flex:1; }
+.craft-item-name{ font-family:var(--font-ui); font-weight:600; font-size:13px; }
+.craft-item-req{ font-family:var(--font-mono); font-size:10px; color:var(--col-muted); margin-top:2px; }
+.craft-item-btn{
+  font-family:var(--font-ui); font-weight:700; font-size:11px;
+  letter-spacing:0.06em; text-transform:uppercase;
+  padding:5px 14px; border-radius:4px;
+  background:rgba(200,60,20,0.4); border:1px solid rgba(220,80,30,0.3);
+  color:var(--col-text); cursor:pointer;
+}
+.craft-item-btn:hover{ background:rgba(200,60,20,0.7); }
+
+/* ---- WEATHER OVERLAY ---- */
+#weatherOverlay{
+  position:fixed; inset:0;
+  pointer-events:none;
+  z-index:15;
+  transition:opacity 3s;
+  opacity:0;
+}
+
+/* ---- DAMAGE FLASH ---- */
+#dmgFlash{
+  position:fixed; inset:0;
+  background:rgba(200,20,20,0);
+  pointer-events:none;
+  z-index:60;
+  transition:background 0.12s;
+}
+
+/* ---- OXYGEN VIGNETTE ---- */
+#oxyVignette{
+  position:fixed; inset:0;
+  background:radial-gradient(ellipse at center, transparent 40%, rgba(0,50,100,0) 100%);
+  pointer-events:none;
+  z-index:55;
+  transition:background 0.5s;
+  opacity:0;
+}
+
+/* ---- PROXIMITY LABEL ---- */
+#proximityLabel{
+  position:fixed;
+  left:50%; bottom:28%;
+  transform:translateX(-50%);
+  font-family:var(--font-ui);
+  font-weight:600; font-size:14px;
+  letter-spacing:0.1em;
+  color:rgba(255,200,160,0.9);
+  background:rgba(0,0,0,0.5);
+  border:1px solid rgba(200,80,40,0.3);
+  border-radius:var(--r);
+  padding:6px 16px;
+  pointer-events:none;
+  z-index:45;
+  opacity:0;
+  transition:opacity 0.25s;
+}
+
+/* ---- DEATH SCREEN ---- */
+#deathScreen{
+  position:fixed; inset:0;
+  z-index:110;
+  background:rgba(0,0,0,0);
+  display:none;
+  align-items:center; justify-content:center;
+  flex-direction:column; gap:16px;
+  transition:background 2s;
+}
+#deathScreen.active{
+  display:flex;
+  background:rgba(0,0,0,0.85);
+}
+.death-title{
+  font-family:var(--font-ui); font-weight:700;
+  font-size:clamp(36px,6vw,64px);
+  color:#ff3322;
+  text-shadow:0 0 40px rgba(255,50,30,0.6);
+  animation:deathPulse 2s ease infinite;
+}
+@keyframes deathPulse{
+  0%,100%{ text-shadow:0 0 30px rgba(255,50,30,0.5); }
+  50%{ text-shadow:0 0 60px rgba(255,80,50,0.9); }
+}
+.death-sub{ font-family:var(--font-mono); font-size:14px; color:var(--col-muted); }
+
+/* ---- NOTIFICATION TOASTS ---- */
+#toastContainer{
+  position:fixed; right:16px; top:50%;
+  transform:translateY(-50%);
+  z-index:70;
+  display:flex; flex-direction:column; gap:8px;
+  pointer-events:none;
+  max-width:280px;
+}
+.toast{
+  background:var(--col-panel);
+  border:1px solid var(--col-border);
+  border-radius:var(--r);
+  padding:10px 14px;
+  font-family:var(--font-ui); font-size:13px; font-weight:600;
+  backdrop-filter:blur(8px);
+  animation:toastIn 0.3s cubic-bezier(0.22,1,0.36,1) both;
+  display:flex; align-items:center; gap:8px;
+}
+.toast.success{ border-color:rgba(80,220,100,0.35); }
+.toast.warning{ border-color:rgba(240,170,50,0.35); }
+.toast.danger{  border-color:rgba(240,60,60,0.35); }
+@keyframes toastIn{
+  from{ opacity:0; transform:translateX(20px); }
+  to{ opacity:1; transform:translateX(0); }
+}
+
+/* ---- LOCATION STAMP ---- */
+#locationStamp{
+  position:fixed; left:50%; top:16px;
+  transform:translateX(-50%);
+  z-index:40;
+  pointer-events:none;
+  font-family:var(--font-mono); font-size:10px;
+  letter-spacing:0.18em;
+  color:rgba(255,200,160,0.4);
+  text-transform:uppercase;
+}
+
+/* ---- INTERACT PROMPT ---- */
+#interactPrompt{
+  position:fixed; left:50%; bottom:35%;
+  transform:translateX(-50%);
+  z-index:45;
+  pointer-events:none;
+  opacity:0;
+  transition:opacity 0.2s;
+}
+.interact-inner{
+  background:rgba(8,3,2,0.85);
+  border:1px solid var(--col-border);
+  border-radius:var(--r);
+  padding:6px 14px;
+  display:flex; align-items:center; gap:8px;
+  font-family:var(--font-ui); font-weight:600; font-size:13px;
+}
+.interact-key{
+  background:rgba(200,80,40,0.3);
+  border:1px solid rgba(200,80,40,0.5);
+  border-radius:3px;
+  padding:1px 7px;
+  font-family:var(--font-mono); font-size:11px;
+  color:var(--col-glow);
+}
+
+/* ---- OBJECTIVE TRACKER ---- */
+#objectiveTracker{
+  position:fixed; right:16px; top:260px;
+  z-index:40;
+  pointer-events:none;
+  width:240px;
+}
+.obj-card{
+  background:var(--col-panel);
+  border:1px solid var(--col-border);
+  border-radius:var(--r-lg);
+  padding:10px 14px;
+  backdrop-filter:blur(8px);
+}
+.obj-head{
+  font-family:var(--font-mono); font-size:9px;
+  letter-spacing:0.18em; color:var(--col-muted);
+  text-transform:uppercase; margin-bottom:8px;
+}
+.obj-item{
+  display:flex; align-items:center; gap:8px;
+  margin-bottom:6px;
+  font-family:var(--font-ui); font-size:12px; font-weight:500;
+}
+.obj-check{
+  width:14px; height:14px;
+  border-radius:3px;
+  border:1px solid rgba(200,80,40,0.4);
+  flex-shrink:0;
+  background:rgba(200,80,40,0.08);
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px;
+}
+.obj-check.done{ background:rgba(80,220,100,0.2); border-color:rgba(80,220,100,0.4); }
+.obj-text{ color:var(--col-text); line-height:1.3; }
+.obj-text.done{ color:var(--col-muted); text-decoration:line-through; }
+
+/* ---- SCAN EFFECT ---- */
+#scanLine{
+  position:fixed; inset:0;
+  pointer-events:none;
+  z-index:11;
+  background:repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.04) 3px,
+    rgba(0,0,0,0.04) 4px
+  );
+  opacity:0.5;
+}
+
+/* ---- VEHICLE HUD ---- */
+#vehicleHud{
+  position:fixed; left:50%; bottom:80px;
+  transform:translateX(-50%);
+  z-index:40;
+  pointer-events:none;
+  display:none;
+}
+.veh-card{
+  background:var(--col-panel);
+  border:1px solid var(--col-border);
+  border-radius:var(--r-lg);
+  padding:10px 20px;
+  backdrop-filter:blur(8px);
+  display:flex; align-items:center; gap:20px;
+}
+.veh-speed{
+  font-family:var(--font-ui); font-weight:700; font-size:28px;
+  color:var(--col-ember);
+}
+.veh-unit{ font-family:var(--font-mono); font-size:11px; color:var(--col-muted); }
+.veh-label{ font-family:var(--font-mono); font-size:10px; color:var(--col-muted); letter-spacing:0.12em; }
+
+/* ---- SCROLLBAR ---- */
+::-webkit-scrollbar{ width:4px; }
+::-webkit-scrollbar-track{ background:transparent; }
+::-webkit-scrollbar-thumb{ background:rgba(200,80,40,0.3); border-radius:2px; }
 </style>
 </head>
 <body>
-<div id="app">
-  <canvas id="canvas"></canvas>
 
-  <div id="ui" role="region" aria-label="Game HUD">
-    <h1>MilesMars — Hardcore (Fixed)</h1>
-    <div class="row">
-      <div style="font-size:13px">Health</div>
-      <div class="meter" style="width:180px"><i id="healthBar" style="width:100%"></i></div>
-      <div id="healthText" style="width:48px;text-align:right;font-size:13px">100%</div>
-    </div>
-    <div class="row">
-      <div style="font-size:13px">Oxygen</div>
-      <div class="meter" style="width:180px"><i id="oxyBar" style="background:linear-gradient(90deg,#6fd6ff,#2aa6ff);width:100%"></i></div>
-      <div id="oxyText" style="width:48px;text-align:right;font-size:13px">100%</div>
-    </div>
-    <div class="row">
-      <div style="font-size:13px">Stamina</div>
-      <div class="meter" style="width:180px"><i id="stamBar" style="background:linear-gradient(90deg,#a6ff8a,#4ad62a);width:100%"></i></div>
-      <div id="stamText" style="width:48px;text-align:right;font-size:13px">100%</div>
-    </div>
-    <div class="row">
-      <div style="font-size:13px">Mission</div>
-      <div style="flex:1;text-align:right;font-size:13px;color:var(--muted)" id="missionTitle">Ready</div>
-    </div>
-    <div style="margin-top:8px;display:flex;gap:8px">
-      <button class="btn" id="startBtn">Start Mission</button>
-      <button class="btn secondary" id="invBtn">Inventory</button>
-      <button class="btn secondary" id="mapBtn">Map</button>
-    </div>
+<!-- THREE.JS CANVAS -->
+<canvas id="gameCanvas"></canvas>
+
+<!-- SCAN LINE OVERLAY -->
+<div id="scanLine"></div>
+
+<!-- CROSSHAIR -->
+<div id="crosshair">
+  <span class="ch-h"></span>
+  <span class="ch-v"></span>
+  <span class="ch-dot"></span>
+</div>
+
+<!-- WEATHER CANVAS OVERLAY -->
+<canvas id="weatherOverlay"></canvas>
+
+<!-- DAMAGE FLASH -->
+<div id="dmgFlash"></div>
+
+<!-- OXYGEN VIGNETTE -->
+<div id="oxyVignette"></div>
+
+<!-- LOCATION STAMP -->
+<div id="locationStamp">OLYMPUS SECTOR — ZONE 4-ALPHA</div>
+
+<!-- MISSION BANNER -->
+<div id="missionBanner">
+  <div class="mission-card" id="missionCard">
+    <div class="mission-dot"></div>
+    <div class="mission-label" id="missionLabel">MISSION: AWAITING ORDERS</div>
+    <div class="mission-progress" id="missionProgress">0/6</div>
+    <div class="mission-timer" id="missionTimer">00:00</div>
   </div>
+</div>
 
-  <div id="minimap" aria-hidden="false">
-    <canvas id="mini" width="240" height="240" style="width:100%;height:100%;border-radius:6px;background:transparent"></canvas>
-  </div>
-
-  <div id="log" aria-live="polite"></div>
-
-  <div id="controls">
-    <div style="display:flex;gap:8px">
-      <button class="btn" id="sprintBtn">Sprint</button>
-      <button class="btn secondary" id="jumpBtn">Jump</button>
-      <button class="btn secondary" id="interactBtn">Interact</button>
-    </div>
-    <div style="margin-top:8px;color:var(--muted);font-size:13px">Controls: WASD move · Shift sprint · Space jump · Mouse look · E interact · I inventory</div>
-    <div style="margin-top:8px;display:flex;gap:8px">
-      <button class="btn secondary" id="saveBtn">Save</button>
-      <button class="btn secondary" id="loadBtn">Load</button>
-      <button class="btn secondary" id="resetBtn">Reset</button>
-    </div>
-  </div>
-
-  <div id="splash">
-    <div class="panel" id="splashPanel">
-      <h2>MilesMars — Hardcore Mars Adventure</h2>
-      <p style="color:var(--muted)">Third-person exploration with realistic terrain, NPCs, vehicles, crafting, and missions. Buttons fixed and wired.</p>
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button class="btn" id="splashStart">Play</button>
-        <button class="btn secondary" id="splashLearn">How to Play</button>
-        <button class="btn secondary" id="splashEditor">Open Editor</button>
+<!-- HUD TOP-LEFT: VITALS -->
+<div id="hud-tl">
+  <div class="hud-card">
+    <div class="hud-title">⬡ PILOT VITALS</div>
+    <div class="hud-vitals">
+      <div class="vital-row">
+        <div class="vital-label">HEALTH</div>
+        <div class="vital-bar-bg"><div class="vital-bar-fill bar-health" id="barHealth" style="width:100%"></div></div>
+        <div class="vital-val" id="valHealth">100</div>
+      </div>
+      <div class="vital-row">
+        <div class="vital-label">OXYGEN</div>
+        <div class="vital-bar-bg"><div class="vital-bar-fill bar-oxygen" id="barOxygen" style="width:100%"></div></div>
+        <div class="vital-val" id="valOxygen">100</div>
+      </div>
+      <div class="vital-row">
+        <div class="vital-label">STAMINA</div>
+        <div class="vital-bar-bg"><div class="vital-bar-fill bar-stamina" id="barStamina" style="width:100%"></div></div>
+        <div class="vital-val" id="valStamina">100</div>
+      </div>
+      <div class="vital-row">
+        <div class="vital-label">SUIT</div>
+        <div class="vital-bar-bg"><div class="vital-bar-fill bar-suit" id="barSuit" style="width:100%"></div></div>
+        <div class="vital-val" id="valSuit">100</div>
       </div>
     </div>
   </div>
-
-  <div id="inventory" role="dialog" aria-modal="true" aria-hidden="true">
-    <h3 style="margin:0 0 12px 0">Inventory</h3>
-    <div class="inv-grid" id="invGrid"></div>
-    <div style="margin-top:12px;display:flex;gap:8px">
-      <button class="btn" id="closeInv">Close</button>
-      <button class="btn secondary" id="dropAll">Drop All</button>
+  <div class="hud-card" id="weatherCard">
+    <div class="hud-title">⬡ ENVIRONMENT</div>
+    <div style="font-family:var(--font-mono);font-size:11px;display:flex;flex-direction:column;gap:3px;">
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--col-muted)">TEMP</span><span id="envTemp">-63°C</span></div>
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--col-muted)">WIND</span><span id="envWind">12 m/s NW</span></div>
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--col-muted)">ATMO</span><span id="envAtmo">0.6% O₂</span></div>
+      <div style="display:flex;justify-content:space-between;"><span style="color:var(--col-muted)">STORM</span><span id="envStorm" style="color:var(--col-ok)">CLEAR</span></div>
     </div>
   </div>
-
-  <div id="debugOverlay" style="display:none"></div>
-
-  <div id="credits">MilesMars — Hardcore Prototype</div>
 </div>
 
-<script>
-/* ============================================================================================================
-   MilesMars Hardcore — Fixed Buttons Edition
-   - Buttons and UI interactions fixed
-   - Large single-file prototype with safe filler content to reach substantial length
-   - All UI elements wired and functional: Start, Inventory, Map, Sprint, Jump, Interact, Save, Load, Reset
-   ============================================================================================================ */
+<!-- HUD TOP-RIGHT: MINIMAP -->
+<div id="hud-tr">
+  <div id="minimapWrap">
+    <canvas id="minimapCanvas" width="220" height="220"></canvas>
+    <div class="minimap-ring"></div>
+  </div>
+  <div class="minimap-label">TACTICAL — OLYMPUS BASE</div>
+</div>
 
-/* =========================
-   Configuration
-   ========================= */
-const CONFIG = {
-  seed: Math.floor(Math.random()*1000000),
-  terrainSize: 2048,
-  terrainSegments: 256,
-  heightScale: 140,
-  playerHeight: 2.0,
-  playerSpeed: 8.0,
-  sprintMultiplier: 1.8,
-  jumpSpeed: 9.0,
-  gravity: -32,
-  cameraDistance: 6.5,
-  cameraHeight: 2.4,
-  fogColor: 0x1a0b0b,
-  skyColor: 0x0f0b0b,
-  ambientLight: 0x9a7b6a,
-  directionalLight: 0xffe6d6,
-  oxygenDrainRate: 1.0,
-  healthDrainRate: 1.6,
-  missionCount: 6,
-  npcCount: 12,
-  roverCount: 2,
-  maxInventorySlots: 64,
-  autosaveInterval: 60,
-  debug: false
+<!-- OBJECTIVE TRACKER -->
+<div id="objectiveTracker">
+  <div class="obj-card">
+    <div class="obj-head">⬡ OBJECTIVES</div>
+    <div class="obj-item"><div class="obj-check" id="obj1Check"> </div><div class="obj-text" id="obj1Text">Reach first beacon</div></div>
+    <div class="obj-item"><div class="obj-check" id="obj2Check"> </div><div class="obj-text" id="obj2Text">Collect 3 data cores</div></div>
+    <div class="obj-item"><div class="obj-check" id="obj3Check"> </div><div class="obj-text" id="obj3Text">Survive dust storm</div></div>
+    <div class="obj-item"><div class="obj-check" id="obj4Check"> </div><div class="obj-text" id="obj4Text">Return to base camp</div></div>
+  </div>
+</div>
+
+<!-- HUD BOTTOM-LEFT: LOG -->
+<div id="hud-bl">
+  <div id="log"></div>
+</div>
+
+<!-- HUD BOTTOM-RIGHT: CONTROLS -->
+<div id="hud-br">
+  <div class="ctrl-panel">
+    <div class="ctrl-title">⬡ COMMAND</div>
+    <div class="btn-row">
+      <button class="hud-btn primary" id="btnMission">▶ START MISSION</button>
+      <button class="hud-btn" id="btnInventory">◫ INVENTORY</button>
+      <button class="hud-btn" id="btnCraft">⚙ CRAFT</button>
+    </div>
+    <div class="btn-row">
+      <button class="hud-btn" id="btnSave">↓ SAVE</button>
+      <button class="hud-btn" id="btnLoad">↑ LOAD</button>
+      <button class="hud-btn danger" id="btnReset">↺ RESET</button>
+    </div>
+    <div class="key-hint" style="margin-top:6px;">
+      <span class="key">WASD</span> move &nbsp;
+      <span class="key">SHIFT</span> sprint &nbsp;
+      <span class="key">SPACE</span> jump<br>
+      <span class="key">E</span> interact &nbsp;
+      <span class="key">I</span> inventory &nbsp;
+      <span class="key">C</span> craft &nbsp;
+      <span class="key">V</span> enter vehicle
+    </div>
+  </div>
+</div>
+
+<!-- PROXIMITY LABEL -->
+<div id="proximityLabel">PRESS E TO INTERACT</div>
+
+<!-- INTERACT PROMPT -->
+<div id="interactPrompt">
+  <div class="interact-inner">
+    <div class="interact-key">E</div>
+    <div id="interactText">Collect Data Core</div>
+  </div>
+</div>
+
+<!-- VEHICLE HUD -->
+<div id="vehicleHud">
+  <div class="veh-card">
+    <div>
+      <div class="veh-label">SPEED</div>
+      <div style="display:flex;align-items:baseline;gap:4px;">
+        <div class="veh-speed" id="vehSpeed">0</div>
+        <div class="veh-unit">km/h</div>
+      </div>
+    </div>
+    <div style="width:1px;height:40px;background:rgba(255,255,255,0.07);"></div>
+    <div>
+      <div class="veh-label">FUEL</div>
+      <div class="vital-bar-bg" style="width:100px;margin-top:4px;"><div class="vital-bar-fill bar-suit" id="barFuel" style="width:100%"></div></div>
+    </div>
+    <div>
+      <button class="hud-btn danger" id="btnExitVehicle" style="pointer-events:all;">EXIT</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toastContainer"></div>
+
+<!-- INVENTORY OVERLAY -->
+<div id="invOverlay">
+  <div class="inv-panel">
+    <div class="inv-head">
+      <div class="inv-head-title">◫ INVENTORY — PILOT PACK</div>
+      <button class="hud-btn" id="btnCloseInv">CLOSE ✕</button>
+    </div>
+    <div class="inv-grid" id="invGrid"></div>
+    <div class="inv-footer">
+      <button class="hud-btn" id="btnDropAll">DROP ALL</button>
+      <button class="hud-btn primary" id="btnOpenCraftFromInv">⚙ CRAFT</button>
+    </div>
+  </div>
+</div>
+
+<!-- CRAFT PANEL -->
+<div id="craftPanel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+    <div class="craft-title">⚙ CRAFTING STATION</div>
+    <button class="hud-btn" id="btnCloseCraft">CLOSE ✕</button>
+  </div>
+  <div class="craft-list" id="craftList"></div>
+</div>
+
+<!-- DEATH SCREEN -->
+<div id="deathScreen">
+  <div class="death-title">YOU DIED</div>
+  <div class="death-sub" id="deathCause">Cause: Oxygen depletion</div>
+  <button class="splash-btn play" id="btnRespawn" style="margin-top:10px;pointer-events:all;">RESPAWN</button>
+</div>
+
+<!-- SPLASH SCREEN -->
+<div id="splash">
+  <div class="splash-inner">
+    <div class="splash-eyebrow">◈ MILESMARS — RED PLANET SURVIVAL ◈</div>
+    <div class="splash-title">Miles<em>Mars</em></div>
+    <div class="splash-divider"></div>
+    <div class="splash-sub">
+      Explore a procedurally generated Martian surface. Manage oxygen, gather resources,
+      complete field missions, and survive the unforgiving red wasteland.
+    </div>
+    <div class="splash-btns">
+      <button class="splash-btn play" id="btnSplashPlay">▶ LAUNCH MISSION</button>
+      <button class="splash-btn outline" id="btnSplashHow">HOW TO PLAY</button>
+    </div>
+    <div class="splash-specs">
+      <div class="spec-item">
+        <div class="spec-label">TERRAIN SIZE</div>
+        <div class="spec-val">2048m²</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">GRAVITY</div>
+        <div class="spec-val">3.72 m/s²</div>
+      </div>
+      <div class="spec-item">
+        <div class="spec-label">O₂ RESERVE</div>
+        <div class="spec-val">100 units</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     GAME SCRIPT — MILESMARS
+     ============================================================ -->
+<script>
+'use strict';
+
+/* ================================================================
+   SECTION 1 — GLOBAL CONFIG
+   ================================================================ */
+const CFG = {
+  SEED:             Math.floor(Math.random()*9999999),
+  TERRAIN_SIZE:     2048,
+  TERRAIN_SEGS:     200,
+  HEIGHT_SCALE:     130,
+  PLAYER_SPEED:     7.5,
+  SPRINT_MULT:      1.85,
+  JUMP_VEL:         8.5,
+  GRAVITY:          -11.0,   // Martian gravity ~3.72 m/s² scaled
+  CAM_DIST:         7.0,
+  CAM_HEIGHT:       2.6,
+  CAM_LERP:         8.0,
+  OXY_DRAIN:        0.9,     // per second when in open
+  SUIT_DRAIN:       0.05,    // per second passive
+  STAMINA_DRAIN:    18.0,    // per second while sprinting
+  STAMINA_REGEN:    9.0,     // per second while idle
+  HEALTH_OXY_DMG:   2.5,     // per second when oxygen zero
+  BEACON_COUNT:     6,
+  NPC_COUNT:        8,
+  ROVER_COUNT:      2,
+  INV_SLOTS:        50,
+  FOG_DENSITY:      0.00038,
+  SKY_COLOR:        0x100808,
+  FOG_COLOR:        0x180a08,
+  STORM_CHANCE:     0.0003,  // per frame
+  STORM_DURATION:   40,      // seconds
+  AUTOSAVE_SECS:    90,
 };
 
-/* =========================
-   Utilities
-   ========================= */
-function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
-function lerp(a,b,t){ return a + (b-a)*t; }
-function now(){ return performance.now()/1000; }
-function uid(prefix='id'){ return prefix + '_' + Math.random().toString(36).slice(2,9); }
+/* ================================================================
+   SECTION 2 — UTILITIES
+   ================================================================ */
+const clamp   = (v,lo,hi)  => Math.max(lo,Math.min(hi,v));
+const lerp    = (a,b,t)    => a+(b-a)*t;
+const ilerp   = (v,a,b)    => (v-a)/(b-a);
+const remap   = (v,a,b,c,d)=> lerp(c,d,ilerp(v,a,b));
+const rand    = (lo,hi)    => lo + Math.random()*(hi-lo);
+const randInt = (lo,hi)    => Math.floor(rand(lo,hi+1));
+const uid     = ()         => Math.random().toString(36).slice(2,9);
+const now     = ()         => performance.now()*0.001;
 
-/* =========================
-   Logging
-   ========================= */
-const logEl = document.getElementById('log');
-function log(msg){
-  const p = document.createElement('div');
-  p.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
-  logEl.prepend(p);
-  while(logEl.children.length > 120) logEl.removeChild(logEl.lastChild);
+function lerpAngle(a,b,t){
+  let d=b-a;
+  while(d<-Math.PI)d+=Math.PI*2;
+  while(d>Math.PI) d-=Math.PI*2;
+  return a+d*t;
 }
 
-/* =========================
-   Renderer & Scene
-   ========================= */
-const canvas = document.getElementById('canvas');
-const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+function worldToScreen(wx,wy,wz,cam){
+  const v=new THREE.Vector3(wx,wy,wz);
+  v.project(cam);
+  return{
+    x:(v.x+1)*0.5*window.innerWidth,
+    y:(-v.y+1)*0.5*window.innerHeight,
+    z:v.z
+  };
+}
+
+/* ================================================================
+   SECTION 3 — SIMPLE PSEUDO-RANDOM SEEDED NOISE (no deps)
+   ================================================================ */
+class SeededRandom {
+  constructor(seed){ this.s=seed>>>0; }
+  next(){
+    this.s=(this.s*1664525+1013904223)>>>0;
+    return this.s/0x100000000;
+  }
+  range(lo,hi){ return lo+this.next()*(hi-lo); }
+}
+
+class SimplexNoise2D {
+  constructor(seed){
+    this.rng=new SeededRandom(seed);
+    this.perm=new Uint8Array(512);
+    const p=new Uint8Array(256);
+    for(let i=0;i<256;i++)p[i]=i;
+    for(let i=255;i>0;i--){
+      const j=Math.floor(this.rng.next()*(i+1));
+      [p[i],p[j]]=[p[j],p[i]];
+    }
+    for(let i=0;i<512;i++)this.perm[i]=p[i&255];
+    this.F2=0.5*(Math.sqrt(3)-1);
+    this.G2=(3-Math.sqrt(3))/6;
+    this.grad3=[[1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],[1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],[0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]];
+  }
+  noise(xin,yin){
+    const{F2,G2,perm,grad3}=this;
+    const s=(xin+yin)*F2;
+    const i=Math.floor(xin+s),j=Math.floor(yin+s);
+    const t=(i+j)*G2,X0=i-t,Y0=j-t;
+    const x0=xin-X0,y0=yin-Y0;
+    const i1=x0>y0?1:0,j1=x0>y0?0:1;
+    const x1=x0-i1+G2,y1=y0-j1+G2;
+    const x2=x0-1+2*G2,y2=y0-1+2*G2;
+    const ii=i&255,jj=j&255;
+    const gi0=perm[ii+perm[jj]]%12;
+    const gi1=perm[ii+i1+perm[jj+j1]]%12;
+    const gi2=perm[ii+1+perm[jj+1]]%12;
+    let n0=0,n1=0,n2=0;
+    let t0=0.5-x0*x0-y0*y0;
+    if(t0>=0){ t0*=t0; n0=t0*t0*(grad3[gi0][0]*x0+grad3[gi0][1]*y0); }
+    let t1=0.5-x1*x1-y1*y1;
+    if(t1>=0){ t1*=t1; n1=t1*t1*(grad3[gi1][0]*x1+grad3[gi1][1]*y1); }
+    let t2=0.5-x2*x2-y2*y2;
+    if(t2>=0){ t2*=t2; n2=t2*t2*(grad3[gi2][0]*x2+grad3[gi2][1]*y2); }
+    return 70*(n0+n1+n2);
+  }
+}
+
+/* ================================================================
+   SECTION 4 — THREE.JS SETUP
+   ================================================================ */
+const canvas3d = document.getElementById('gameCanvas');
+const renderer = new THREE.WebGLRenderer({canvas:canvas3d,antialias:true,powerPreference:'high-performance'});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
-renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.outputEncoding = THREE.sRGBEncoding;
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=0.85;
 
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(CONFIG.skyColor);
-scene.fog = new THREE.FogExp2(CONFIG.fogColor, 0.00045);
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(CFG.SKY_COLOR);
+scene.fog=new THREE.FogExp2(CFG.FOG_COLOR,CFG.FOG_DENSITY);
 
-const camera = new THREE.PerspectiveCamera(62, window.innerWidth/window.innerHeight, 0.1, 10000);
-camera.position.set(0, CONFIG.cameraHeight, CONFIG.cameraDistance);
+const camera=new THREE.PerspectiveCamera(65,window.innerWidth/window.innerHeight,0.1,8000);
+scene.add(camera);
 
-/* Lights */
-const hemi = new THREE.HemisphereLight(0xffe6d6, 0x33221a, 0.6);
-scene.add(hemi);
+/* LIGHTS */
+const ambLight=new THREE.AmbientLight(0x7a5540,0.65);
+scene.add(ambLight);
 
-const sun = new THREE.DirectionalLight(CONFIG.directionalLight, 1.0);
-sun.position.set(400, 800, 200);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048,2048);
-sun.shadow.camera.left = -1200;
-sun.shadow.camera.right = 1200;
-sun.shadow.camera.top = 1200;
-sun.shadow.camera.bottom = -1200;
-sun.shadow.camera.far = 3000;
-scene.add(sun);
+const hemiLight=new THREE.HemisphereLight(0xffe8d0,0x3a1a0a,0.55);
+scene.add(hemiLight);
 
-/* Post-processing */
-let composer, fxaaPass;
-function setupPostProcessing(){
-  composer = new THREE.EffectComposer(renderer);
-  const renderPass = new THREE.RenderPass(scene, camera);
-  composer.addPass(renderPass);
-  fxaaPass = new THREE.ShaderPass(THREE.FXAAShader);
-  fxaaPass.material.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
-  composer.addPass(fxaaPass);
-}
-setupPostProcessing();
+const sunLight=new THREE.DirectionalLight(0xffddbb,1.15);
+sunLight.position.set(600,900,300);
+sunLight.castShadow=true;
+sunLight.shadow.mapSize.set(2048,2048);
+sunLight.shadow.camera.left=-1400;
+sunLight.shadow.camera.right=1400;
+sunLight.shadow.camera.top=1400;
+sunLight.shadow.camera.bottom=-1400;
+sunLight.shadow.camera.far=3500;
+sunLight.shadow.bias=-0.001;
+scene.add(sunLight);
 
-/* =========================
-   Terrain generation
-   ========================= */
-const simplex = new SimplexNoise(CONFIG.seed.toString());
-const terrainGroup = new THREE.Group();
-terrainGroup.name = "terrain";
-scene.add(terrainGroup);
+/* Distant fill light */
+const fillLight=new THREE.DirectionalLight(0xff6030,0.2);
+fillLight.position.set(-400,200,-600);
+scene.add(fillLight);
 
-let terrainMesh = null;
-let terrainGeometry = null;
+/* ================================================================
+   SECTION 5 — TERRAIN GENERATION
+   ================================================================ */
+const noise=new SimplexNoise2D(CFG.SEED);
+let terrainMesh=null;
+let heightCache=null;
 
 function generateTerrain(){
-  if(terrainMesh){
-    terrainGroup.remove(terrainMesh);
-    terrainMesh.geometry.dispose();
-    terrainMesh.material.dispose();
-    terrainMesh = null;
+  const size=CFG.TERRAIN_SIZE;
+  const segs=CFG.TERRAIN_SEGS;
+  const geo=new THREE.PlaneGeometry(size,size,segs,segs);
+  geo.rotateX(-Math.PI/2);
+
+  const pos=geo.attributes.position;
+  const vc=pos.count;
+  heightCache=new Float32Array(vc);
+
+  const colors=[];
+  const col=new THREE.Color();
+
+  const f0=0.00085, f1=0.0018, f2=0.0045, f3=0.012, f4=0.035;
+
+  for(let i=0;i<vc;i++){
+    const x=pos.getX(i);
+    const z=pos.getZ(i);
+
+    // Multi-octave FBM
+    let e  = noise.noise(x*f0, z*f0)*1.00;
+    e     += noise.noise(x*f1, z*f1)*0.50;
+    e     += noise.noise(x*f2, z*f2)*0.25;
+    e     += noise.noise(x*f3, z*f3)*0.12;
+    e     += noise.noise(x*f4, z*f4)*0.06;
+    e     *= 0.55;
+
+    // Ridge noise for mountain chains
+    let ridge=Math.abs(noise.noise(x*0.0007,z*0.0007));
+    ridge=Math.pow(1.0-ridge,2.5)*0.55;
+
+    // Crater shapes
+    const cx=noise.noise(x*0.0005+100,z*0.0005)*0.8;
+    const cy=noise.noise(x*0.0005,z*0.0005+200)*0.8;
+    const cr=Math.max(0,0.5-Math.sqrt(cx*cx+cy*cy));
+    const craterDip=cr*cr*-80;
+
+    const h=(e*CFG.HEIGHT_SCALE) + (ridge*90) + craterDip;
+    pos.setY(i,h);
+    heightCache[i]=h;
+
+    // Vertex coloring
+    const n=(h+80)/200;
+    if(h<-20)       col.setHSL(0.04,0.45,0.18+n*0.06);
+    else if(h<10)   col.setHSL(0.04,0.55,0.26+n*0.05);
+    else if(h<40)   col.setHSL(0.05,0.60,0.34+n*0.06);
+    else if(h<80)   col.setHSL(0.06,0.55,0.42+n*0.05);
+    else             col.setHSL(0.07,0.40,0.52+n*0.04);
+
+    // Micro variation
+    const jitter=noise.noise(x*0.06,z*0.06)*0.04;
+    col.offsetHSL(0,0,jitter);
+    colors.push(col.r,col.g,col.b);
   }
 
-  const size = CONFIG.terrainSize;
-  const seg = CONFIG.terrainSegments;
-  const geometry = new THREE.PlaneGeometry(size, size, seg, seg);
-  geometry.rotateX(-Math.PI/2);
+  geo.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));
+  geo.computeVertexNormals();
 
-  const pos = geometry.attributes.position;
-  const vertex = new THREE.Vector3();
-  const freqBase = 0.0009;
-  for(let i=0;i<pos.count;i++){
-    vertex.fromBufferAttribute(pos, i);
-    const nx = vertex.x;
-    const nz = vertex.z;
-    let e = 0;
-    e += simplex.noise2D(nx*freqBase, nz*freqBase) * 1.0;
-    e += simplex.noise2D(nx*freqBase*2.3, nz*freqBase*2.3) * 0.5;
-    e += simplex.noise2D(nx*freqBase*5.7, nz*freqBase*5.7) * 0.25;
-    e = Math.pow(Math.abs(e), 1.6) * (e<0?-1:1);
-    const crater = Math.abs(simplex.noise2D(nx*0.0012, nz*0.0012));
-    const craterDepth = Math.max(0, (0.6 - crater)) * 1.2;
-    const ridges = simplex.noise2D(nx*0.0006, nz*0.0006) * 0.6;
-    const height = (e * CONFIG.heightScale) + (craterDepth * -40) + (ridges * 12);
-    pos.setY(i, height);
-  }
-  geometry.computeVertexNormals();
-
-  const colors = [];
-  for(let i=0;i<pos.count;i++){
-    const y = pos.getY(i);
-    const c = new THREE.Color();
-    if(y < -10) c.set('#6b3f2a');
-    else if(y < 6) c.set('#8b4b2f');
-    else if(y < 30) c.set('#b86a3f');
-    else c.set('#d08b5a');
-    c.offsetHSL(0, 0, (simplex.noise2D(i*0.01, i*0.01)-0.5)*0.06);
-    colors.push(c.r, c.g, c.b);
-  }
-  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-
-  const material = new THREE.MeshStandardMaterial({
-    vertexColors: true,
-    roughness: 1.0,
-    metalness: 0.0,
-    flatShading: false,
-    side: THREE.DoubleSide
+  const mat=new THREE.MeshStandardMaterial({
+    vertexColors:true,
+    roughness:0.97,
+    metalness:0.0,
+    side:THREE.FrontSide,
   });
 
-  terrainMesh = new THREE.Mesh(geometry, material);
-  terrainMesh.receiveShadow = true;
-  terrainMesh.castShadow = false;
-  terrainGroup.add(terrainMesh);
-
-  terrainGeometry = geometry;
-
-  addRocksAndProps(geometry);
+  terrainMesh=new THREE.Mesh(geo,mat);
+  terrainMesh.receiveShadow=true;
+  terrainMesh.name='terrain';
+  scene.add(terrainMesh);
 }
 
-/* =========================
-   Props and beacons
-   ========================= */
-const propsGroup = new THREE.Group();
-propsGroup.name = "props";
+function sampleHeight(x,z){
+  if(!terrainMesh)return 0;
+  const size=CFG.TERRAIN_SIZE;
+  const segs=CFG.TERRAIN_SEGS;
+  const step=size/segs;
+  const half=size/2;
+  const fx=(x+half)/step;
+  const fz=(z+half)/step;
+  const ix=Math.floor(fx), iz=Math.floor(fz);
+  const grid=segs+1;
+  const i00=iz*grid+ix;
+  const i10=iz*grid+(ix+1);
+  const i01=(iz+1)*grid+ix;
+  const i11=(iz+1)*grid+(ix+1);
+  if(i00<0||i11>=heightCache.length)return -1000;
+  const tx=fx-ix, tz=fz-iz;
+  const h00=heightCache[i00]||0;
+  const h10=heightCache[i10]||0;
+  const h01=heightCache[i01]||0;
+  const h11=heightCache[i11]||0;
+  return lerp(lerp(h00,h10,tx),lerp(h01,h11,tx),tz);
+}
+
+/* ================================================================
+   SECTION 6 — ROCKS, PROPS, STRUCTURES
+   ================================================================ */
+const propsGroup=new THREE.Group();
+propsGroup.name='props';
 scene.add(propsGroup);
 
-let missionBeacons = [];
+const icosGeoCache={};
+function getIcosGeo(r){
+  if(!icosGeoCache[r])icosGeoCache[r]=new THREE.IcosahedronGeometry(r,1);
+  return icosGeoCache[r];
+}
 
-function addRocksAndProps(terrainGeometry){
-  while(propsGroup.children.length){
-    const c = propsGroup.children.pop();
-    c.geometry?.dispose?.();
-    c.material?.dispose?.();
-  }
-  missionBeacons = [];
-
-  const pos = terrainGeometry.attributes.position;
-  const grid = CONFIG.terrainSegments + 1;
-  const size = CONFIG.terrainSize;
-  const step = size / CONFIG.terrainSegments;
-  const rockCount = 1200;
-  const rockGeo = new THREE.IcosahedronGeometry(1,1);
-
-  for(let i=0;i<rockCount;i++){
-    const rx = (Math.random()-0.5) * size;
-    const rz = (Math.random()-0.5) * size;
-    const ix = Math.floor((rx + size/2) / step);
-    const iz = Math.floor((rz + size/2) / step);
-    const idx = iz * (grid) + ix;
-    if(idx < 0 || idx >= pos.count) continue;
-    const y = pos.getY(idx);
-    if(y < -80 || y > 200) continue;
-    const rock = new THREE.Mesh(rockGeo, new THREE.MeshStandardMaterial({color:0x6b4b3a, roughness:1}));
-    const s = 0.6 + Math.random()*3.2;
-    rock.scale.setScalar(s);
-    rock.position.set(rx, y + s*0.5, rz);
-    rock.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
-    rock.castShadow = true;
-    rock.receiveShadow = true;
+function spawnRocks(){
+  const rockMats=[
+    new THREE.MeshStandardMaterial({color:0x5a3828,roughness:1.0}),
+    new THREE.MeshStandardMaterial({color:0x6b4535,roughness:1.0}),
+    new THREE.MeshStandardMaterial({color:0x7a5040,roughness:0.95}),
+    new THREE.MeshStandardMaterial({color:0x4a2e1e,roughness:1.0}),
+  ];
+  const half=CFG.TERRAIN_SIZE/2-30;
+  for(let i=0;i<1800;i++){
+    const rx=rand(-half,half);
+    const rz=rand(-half,half);
+    const ry=sampleHeight(rx,rz);
+    if(ry<-60||ry>160)continue;
+    const s=rand(0.5,4.5);
+    const geo=getIcosGeo(1);
+    const mat=rockMats[randInt(0,rockMats.length-1)];
+    const rock=new THREE.Mesh(geo,mat);
+    rock.scale.set(s,s*rand(0.5,1.2),s*rand(0.8,1.4));
+    rock.position.set(rx,ry+s*0.35,rz);
+    rock.rotation.set(rand(0,Math.PI),rand(0,Math.PI),rand(0,Math.PI));
+    rock.castShadow=true;
+    rock.receiveShadow=true;
     propsGroup.add(rock);
   }
 
-  for(let i=0;i<40;i++){
-    const rx = (Math.random()-0.5) * size;
-    const rz = (Math.random()-0.5) * size;
-    const ix = Math.floor((rx + size/2) / step);
-    const iz = Math.floor((rz + size/2) / step);
-    const idx = iz * (grid) + ix;
-    if(idx < 0 || idx >= pos.count) continue;
-    const y = pos.getY(idx);
-    const bgeo = new THREE.DodecahedronGeometry(1 + Math.random()*3, 0);
-    const bmat = new THREE.MeshStandardMaterial({color:0x5b3f33, roughness:1});
-    const b = new THREE.Mesh(bgeo, bmat);
-    const s = 3 + Math.random()*8;
-    b.scale.setScalar(s);
-    b.position.set(rx, y + s*0.5, rz);
-    b.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
-    b.castShadow = true;
-    b.receiveShadow = true;
-    propsGroup.add(b);
+  // Large boulders
+  for(let i=0;i<60;i++){
+    const rx=rand(-half,half);
+    const rz=rand(-half,half);
+    const ry=sampleHeight(rx,rz);
+    if(ry<-40)continue;
+    const s=rand(4,14);
+    const geo=new THREE.DodecahedronGeometry(1,0);
+    const mat=rockMats[0];
+    const rock=new THREE.Mesh(geo,mat);
+    rock.scale.set(s,s*rand(0.55,0.9),s*rand(0.7,1.1));
+    rock.position.set(rx,ry+s*0.3,rz);
+    rock.rotation.set(rand(0,Math.PI),rand(0,Math.PI),rand(0,Math.PI));
+    rock.castShadow=true;
+    rock.receiveShadow=true;
+    propsGroup.add(rock);
   }
 
-  for(let i=0;i<CONFIG.missionCount;i++){
-    const rx = (Math.random()-0.5) * size * 0.8;
-    const rz = (Math.random()-0.5) * size * 0.8;
-    const ix = Math.floor((rx + size/2) / step);
-    const iz = Math.floor((rz + size/2) / step);
-    const idx = iz * (grid) + ix;
-    if(idx < 0 || idx >= pos.count) continue;
-    const y = pos.getY(idx);
-    const beacon = createBeacon();
-    beacon.position.set(rx, y + 2.2, rz);
-    propsGroup.add(beacon);
-    missionBeacons.push({obj:beacon, pos:new THREE.Vector3(rx,y,rz), collected:false});
+  // Rocky pillars / spires
+  for(let i=0;i<30;i++){
+    const rx=rand(-half,half);
+    const rz=rand(-half,half);
+    const ry=sampleHeight(rx,rz);
+    const h=rand(8,30);
+    const r=rand(1.5,4);
+    const geo=new THREE.CylinderGeometry(r*0.3,r,h,6,3);
+    const mat=new THREE.MeshStandardMaterial({color:0x5a3828,roughness:1});
+    const pillar=new THREE.Mesh(geo,mat);
+    pillar.position.set(rx,ry+h*0.5,rz);
+    pillar.rotation.y=rand(0,Math.PI);
+    pillar.castShadow=true;
+    scene.add(pillar);
+  }
+
+  // Dust dune shapes (low flat meshes)
+  for(let i=0;i<25;i++){
+    const rx=rand(-half,half);
+    const rz=rand(-half,half);
+    const ry=sampleHeight(rx,rz);
+    const geo=new THREE.SphereGeometry(rand(8,22),8,4);
+    const mat=new THREE.MeshStandardMaterial({color:0xa07050,roughness:1.0,metalness:0.0});
+    const dune=new THREE.Mesh(geo,mat);
+    dune.scale.y=rand(0.1,0.3);
+    dune.position.set(rx,ry,rz);
+    dune.receiveShadow=true;
+    scene.add(dune);
   }
 }
 
-/* Beacon */
-function createBeacon(){
-  const g = new THREE.Group();
-  const base = new THREE.CylinderGeometry(0.6, 0.8, 0.6, 12);
-  const baseM = new THREE.MeshStandardMaterial({color:0x2b2b2b, roughness:0.9});
-  const baseMesh = new THREE.Mesh(base, baseM);
-  baseMesh.castShadow = true;
-  baseMesh.receiveShadow = true;
-  g.add(baseMesh);
+/* ================================================================
+   SECTION 7 — BASE CAMP STRUCTURE
+   ================================================================ */
+let basePos=new THREE.Vector3(0,0,0);
 
-  const core = new THREE.SphereGeometry(0.5, 16, 12);
-  const coreM = new THREE.MeshStandardMaterial({emissive:0xff6f3c, emissiveIntensity:1.6, color:0x220000});
-  const coreMesh = new THREE.Mesh(core, coreM);
-  coreMesh.position.y = 0.8;
-  g.add(coreMesh);
+function buildBaseCamp(){
+  const bx=rand(-60,60);
+  const bz=rand(-60,60);
+  const by=sampleHeight(bx,bz);
+  basePos.set(bx,by,bz);
 
-  const ringGeo = new THREE.TorusGeometry(1.2, 0.08, 8, 64);
-  const ringMat = new THREE.MeshStandardMaterial({color:0xffb07a, metalness:0.2, roughness:0.4});
-  const ring = new THREE.Mesh(ringGeo, ringMat);
-  ring.position.y = 1.0;
-  ring.rotation.x = Math.PI/2;
+  // Habitat dome
+  const domeGeo=new THREE.SphereGeometry(8,16,10,0,Math.PI*2,0,Math.PI/2);
+  const domeMat=new THREE.MeshStandardMaterial({color:0xccbbaa,roughness:0.6,metalness:0.3});
+  const dome=new THREE.Mesh(domeGeo,domeMat);
+  dome.position.set(bx,by,bz);
+  dome.castShadow=true;
+  dome.receiveShadow=true;
+  scene.add(dome);
+
+  // Airlock cylinder
+  const lockGeo=new THREE.CylinderGeometry(2.5,2.5,4,12);
+  const lockMat=new THREE.MeshStandardMaterial({color:0x887766,roughness:0.7,metalness:0.5});
+  const lock=new THREE.Mesh(lockGeo,lockMat);
+  lock.position.set(bx+10,by+2,bz);
+  lock.castShadow=true;
+  scene.add(lock);
+
+  // Solar panels
+  for(let i=0;i<4;i++){
+    const ang=i*Math.PI/2;
+    const panelGeo=new THREE.BoxGeometry(4,0.15,2.5);
+    const panelMat=new THREE.MeshStandardMaterial({color:0x1a2a3a,roughness:0.4,metalness:0.8});
+    const panel=new THREE.Mesh(panelGeo,panelMat);
+    panel.position.set(bx+Math.cos(ang)*14,by+2.5,bz+Math.sin(ang)*14);
+    panel.rotation.y=ang;
+    panel.castShadow=true;
+    scene.add(panel);
+
+    // Panel pole
+    const poleGeo=new THREE.CylinderGeometry(0.1,0.1,2.5,6);
+    const poleMat=new THREE.MeshStandardMaterial({color:0x888888,roughness:0.7,metalness:0.5});
+    const pole=new THREE.Mesh(poleGeo,poleMat);
+    pole.position.set(bx+Math.cos(ang)*14,by+1.2,bz+Math.sin(ang)*14);
+    scene.add(pole);
+  }
+
+  // Comm tower
+  const towerGeo=new THREE.CylinderGeometry(0.3,0.5,20,8);
+  const towerMat=new THREE.MeshStandardMaterial({color:0xaaaaaa,roughness:0.5,metalness:0.6});
+  const tower=new THREE.Mesh(towerGeo,towerMat);
+  tower.position.set(bx-15,by+10,bz+15);
+  tower.castShadow=true;
+  scene.add(tower);
+
+  // Dish
+  const dishGeo=new THREE.SphereGeometry(3,12,8,0,Math.PI*2,0,Math.PI/2);
+  const dishMat=new THREE.MeshStandardMaterial({color:0xddccbb,roughness:0.5,metalness:0.4});
+  const dish=new THREE.Mesh(dishGeo,dishMat);
+  dish.position.set(bx-15,by+22,bz+15);
+  dish.rotation.x=-Math.PI/3;
+  scene.add(dish);
+
+  // Glowing base light
+  const baseLight=new THREE.PointLight(0xff8844,2.5,40);
+  baseLight.position.set(bx,by+5,bz);
+  scene.add(baseLight);
+
+  // Interactable airlock
+  lock.userData={interactable:true,type:'airlock',label:'Enter Habitat',onInteract:()=>{
+    addOxygen(30);
+    addHealth(15);
+    toast('Oxygen and health restored at habitat.','success');
+    log('Refuelled at base camp habitat.','ok');
+  }};
+  lock.userData.interactPos=new THREE.Vector3(bx+10,by+2,bz);
+  propsGroup.add(lock);
+}
+
+/* ================================================================
+   SECTION 8 — BEACONS (DATA CORES)
+   ================================================================ */
+let beacons=[];
+let beaconGroup=new THREE.Group();
+beaconGroup.name='beacons';
+scene.add(beaconGroup);
+
+function spawnBeacons(){
+  beacons=[];
+  beaconGroup.clear();
+  const half=CFG.TERRAIN_SIZE/2-80;
+  for(let i=0;i<CFG.BEACON_COUNT;i++){
+    const rx=rand(-half,half);
+    const rz=rand(-half,half);
+    const ry=sampleHeight(rx,rz);
+    const b=buildBeaconMesh();
+    b.position.set(rx,ry,rz);
+    beaconGroup.add(b);
+    beacons.push({
+      id:uid(),
+      mesh:b,
+      pos:new THREE.Vector3(rx,ry,rz),
+      collected:false,
+      label:`Data Core #${i+1}`
+    });
+  }
+}
+
+function buildBeaconMesh(){
+  const g=new THREE.Group();
+
+  // Base plinth
+  const baseGeo=new THREE.CylinderGeometry(0.8,1.1,0.5,12);
+  const baseMat=new THREE.MeshStandardMaterial({color:0x2a2a2a,roughness:0.8,metalness:0.5});
+  g.add(new THREE.Mesh(baseGeo,baseMat));
+
+  // Shaft
+  const shaftGeo=new THREE.CylinderGeometry(0.15,0.2,2.5,8);
+  const shaftMat=new THREE.MeshStandardMaterial({color:0x555555,roughness:0.5,metalness:0.7});
+  const shaft=new THREE.Mesh(shaftGeo,shaftMat);
+  shaft.position.y=1.5;
+  g.add(shaft);
+
+  // Core orb
+  const orbGeo=new THREE.SphereGeometry(0.55,16,12);
+  const orbMat=new THREE.MeshStandardMaterial({
+    color:0x110000,
+    emissive:new THREE.Color(0xff5522),
+    emissiveIntensity:1.8,
+    roughness:0.2,
+    metalness:0.1
+  });
+  const orb=new THREE.Mesh(orbGeo,orbMat);
+  orb.position.y=3.0;
+  g.add(orb);
+
+  // Orbit ring
+  const ringGeo=new THREE.TorusGeometry(1.1,0.06,8,48);
+  const ringMat=new THREE.MeshStandardMaterial({color:0xff7744,roughness:0.4,metalness:0.5});
+  const ring=new THREE.Mesh(ringGeo,ringMat);
+  ring.position.y=3.0;
+  ring.rotation.x=Math.PI/2;
   g.add(ring);
 
-  g.userData = {isBeacon:true, core:coreMesh, ring:ring};
+  // Point light
+  const pl=new THREE.PointLight(0xff5522,3.5,18);
+  pl.position.y=3.0;
+  g.add(pl);
+
+  g.userData={orb,ring,pl,isBeacon:true};
+  g.castShadow=true;
   return g;
 }
 
-/* =========================
-   Player
-   ========================= */
-const player = {
-  obj: null,
-  velocity: new THREE.Vector3(),
-  onGround: false,
-  health: 100,
-  oxygen: 100,
-  stamina: 100,
-  pos: new THREE.Vector3(0,0,0),
-  rotation: 0,
-  sprinting: false,
-  lastJump: 0,
-  inVehicle: null
-};
-
-function createPlayer(){
-  if(player.obj) scene.remove(player.obj);
-  const group = new THREE.Group();
-  const bodyGeo = new THREE.CapsuleGeometry(0.6, 1.2, 6, 12);
-  const bodyMat = new THREE.MeshStandardMaterial({color:0xd9c7b8, roughness:0.9});
-  const body = new THREE.Mesh(bodyGeo, bodyMat);
-  body.castShadow = true;
-  body.receiveShadow = true;
-  body.position.y = CONFIG.playerHeight;
-  group.add(body);
-
-  const helmGeo = new THREE.SphereGeometry(0.6, 16, 12);
-  const helmMat = new THREE.MeshStandardMaterial({color:0x222222, metalness:0.2, roughness:0.2});
-  const helm = new THREE.Mesh(helmGeo, helmMat);
-  helm.position.y = CONFIG.playerHeight + 0.6;
-  group.add(helm);
-
-  group.position.set(0, 200, 0);
-  group.name = "player";
-  group.castShadow = true;
-  scene.add(group);
-  player.obj = group;
-  player.pos.copy(group.position);
-}
-
-/* Camera rig */
-function updateCamera(dt){
-  const targetPos = new THREE.Vector3();
-  targetPos.copy(player.pos);
-  const behind = new THREE.Vector3(Math.sin(player.rotation), 0, Math.cos(player.rotation)).multiplyScalar(-CONFIG.cameraDistance);
-  targetPos.add(new THREE.Vector3(0, CONFIG.cameraHeight, 0)).add(behind);
-
-  camera.position.lerp(targetPos, clamp(dt*6, 0, 1));
-  const lookAt = new THREE.Vector3().copy(player.pos).add(new THREE.Vector3(0, CONFIG.cameraHeight*0.6, 0));
-  camera.lookAt(lookAt);
-}
-
-/* =========================
-   Input
-   ========================= */
-const keys = {};
-window.addEventListener('keydown', (e)=>{ keys[e.key.toLowerCase()] = true; });
-window.addEventListener('keyup', (e)=>{ keys[e.key.toLowerCase()] = false; });
-
-let pointerLocked = false;
-const pointerControls = new THREE.PointerLockControls(camera, document.body);
-document.addEventListener('click', ()=> {
-  if(!pointerLocked) pointerControls.lock();
-});
-pointerControls.addEventListener('lock', ()=> { pointerLocked = true; });
-pointerControls.addEventListener('unlock', ()=> { pointerLocked = false; });
-
-/* =========================
-   Physics helpers
-   ========================= */
-function sampleTerrainHeight(x,z){
-  if(!terrainMesh) return 0;
-  const size = CONFIG.terrainSize;
-  const seg = CONFIG.terrainSegments;
-  const step = size / seg;
-  const ix = Math.floor((x + size/2) / step);
-  const iz = Math.floor((z + size/2) / step);
-  const grid = seg + 1;
-  const idx = iz * grid + ix;
-  const pos = terrainMesh.geometry.attributes.position;
-  if(idx < 0 || idx >= pos.count) return -1000;
-  return pos.getY(idx);
-}
-
-/* =========================
-   Movement & Update
-   ========================= */
-let lastTime = now();
-let missionActive = false;
-let missionStartTime = 0;
-let missionTimer = 0;
-let missionProgress = 0;
-let wireframeMode = false;
-let debugMode = false;
-
-function update(dt){
-  if(missionActive){
-    player.oxygen -= (CONFIG.oxygenDrainRate/60) * dt;
-    if(player.oxygen <= 0){
-      player.oxygen = 0;
-      player.health -= (CONFIG.healthDrainRate/60) * dt;
-    }
-  } else {
-    player.oxygen = clamp(player.oxygen + (0.6/60)*dt, 0, 100);
-  }
-
-  const forward = (keys['w']?1:0) - (keys['s']?1:0);
-  const strafe = (keys['d']?1:0) - (keys['a']?1:0);
-  player.sprinting = keys['shift'];
-
-  let move = new THREE.Vector3();
-  if(forward !== 0 || strafe !== 0){
-    const camYaw = Math.atan2(camera.position.x - player.pos.x, camera.position.z - player.pos.z);
-    const dir = new THREE.Vector3();
-    dir.set(Math.sin(camYaw), 0, Math.cos(camYaw));
-    const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0,1,0), dir).normalize();
-    move.addScaledVector(dir, forward);
-    move.addScaledVector(right, strafe);
-    move.normalize();
-  }
-
-  let speed = CONFIG.playerSpeed * (player.sprinting ? CONFIG.sprintMultiplier : 1.0);
-  move.multiplyScalar(speed);
-
-  player.velocity.x = lerp(player.velocity.x, move.x, clamp(dt*8,0,1));
-  player.velocity.z = lerp(player.velocity.z, move.z, clamp(dt*8,0,1));
-
-  player.velocity.y += CONFIG.gravity * dt;
-
-  if(keys[' '] && player.onGround && (now() - player.lastJump) > 0.25){
-    player.velocity.y = CONFIG.jumpSpeed;
-    player.onGround = false;
-    player.lastJump = now();
-  }
-
-  const nextPos = new THREE.Vector3().copy(player.pos).addScaledVector(player.velocity, dt);
-
-  const groundY = sampleTerrainHeight(nextPos.x, nextPos.z);
-  const footY = groundY + CONFIG.playerHeight;
-  if(nextPos.y <= footY){
-    nextPos.y = footY;
-    player.velocity.y = 0;
-    player.onGround = true;
-  } else {
-    player.onGround = false;
-  }
-
-  const half = CONFIG.terrainSize/2 - 8;
-  nextPos.x = clamp(nextPos.x, -half, half);
-  nextPos.z = clamp(nextPos.z, -half, half);
-
-  player.pos.copy(nextPos);
-  if(player.obj) player.obj.position.copy(player.pos);
-
-  if(move.lengthSq() > 0.001){
-    const yaw = Math.atan2(move.x, move.z);
-    player.rotation = lerpAngle(player.rotation, yaw, clamp(dt*8,0,1));
-    player.obj.rotation.y = player.rotation;
-  }
-
-  updateCamera(dt);
-
-  document.getElementById('healthBar').style.width = `${clamp(player.health,0,100)}%`;
-  document.getElementById('healthText').textContent = `${Math.floor(clamp(player.health,0,100))}%`;
-  document.getElementById('oxyBar').style.width = `${clamp(player.oxygen,0,100)}%`;
-  document.getElementById('oxyText').textContent = `${Math.floor(clamp(player.oxygen,0,100))}%`;
-  document.getElementById('stamBar').style.width = `${clamp(player.stamina,0,100)}%`;
-  document.getElementById('stamText').textContent = `${Math.floor(clamp(player.stamina,0,100))}%`;
-
-  checkBeaconProximity();
-
-  if(missionActive) missionTimer = now() - missionStartTime;
-
-  for(const b of missionBeacons){
-    if(!b.obj) continue;
-    if(b.collected){ b.obj.visible = false; continue; }
-    const ring = b.obj.userData.ring;
-    const core = b.obj.userData.core;
-    if(ring) ring.rotation.z += dt * 0.9;
-    if(core) core.material.emissiveIntensity = 1.0 + Math.sin(now()*2 + b.pos.x*0.01)*0.6;
-  }
-
-  updateParticles(dt);
-  updateNPCs(dt);
-  updateVehicles(dt);
-  updateDOMMarkers();
-  updateMinimap();
-  updateDebug();
-}
-
-/* Angle lerp */
-function lerpAngle(a,b,t){
-  let diff = b - a;
-  while(diff < -Math.PI) diff += Math.PI*2;
-  while(diff > Math.PI) diff -= Math.PI*2;
-  return a + diff * t;
-}
-
-/* =========================
-   Beacon proximity & mission logic
-   ========================= */
-function checkBeaconProximity(){
-  if(!missionActive) return;
-  const reach = 3.2;
-  for(const b of missionBeacons){
-    if(b.collected) continue;
-    const d = b.pos.distanceTo(player.pos);
-    if(d < reach){
-      b.collected = true;
-      log("Collected artifact at " + b.pos.x.toFixed(1) + ", " + b.pos.z.toFixed(1));
-      missionProgress++;
-      updateMissionUI();
-      player.oxygen = clamp(player.oxygen + 18, 0, 100);
-      spawnParticles(b.pos.x, b.pos.y + 1.2, b.pos.z);
-      if(missionProgress >= CONFIG.missionCount) completeMission();
-    }
-  }
-}
-
-/* =========================
-   Particles
-   ========================= */
-const particles = [];
-const particleGroup = new THREE.Group();
+/* ================================================================
+   SECTION 9 — PARTICLE SYSTEM
+   ================================================================ */
+const particlePool=[];
+const particleGroup=new THREE.Group();
 scene.add(particleGroup);
 
-function spawnParticles(x,y,z, color=0xffb07a, count=18){
+function spawnParticles(x,y,z,color=0xff8844,count=24,spread=2.5,speed=3){
   for(let i=0;i<count;i++){
-    const pGeo = new THREE.SphereGeometry(0.06,6,6);
-    const pMat = new THREE.MeshBasicMaterial({color:color});
-    const p = new THREE.Mesh(pGeo, pMat);
+    const pGeo=new THREE.SphereGeometry(0.05+Math.random()*0.08,4,4);
+    const pMat=new THREE.MeshBasicMaterial({color,transparent:true,opacity:1});
+    const p=new THREE.Mesh(pGeo,pMat);
     p.position.set(x,y,z);
-    p.userData = {
-      vel: new THREE.Vector3((Math.random()-0.5)*2, Math.random()*2, (Math.random()-0.5)*2),
-      life: 1.0
+    const theta=Math.random()*Math.PI*2;
+    const phi=Math.random()*Math.PI;
+    p.userData={
+      vel:new THREE.Vector3(
+        Math.sin(phi)*Math.cos(theta)*speed*(0.5+Math.random()*0.5),
+        Math.cos(phi)*speed*(0.3+Math.random()*0.7)+speed*0.5,
+        Math.sin(phi)*Math.sin(theta)*speed*(0.5+Math.random()*0.5)
+      ),
+      life:1.0,
+      decay:0.8+Math.random()*1.2
     };
     particleGroup.add(p);
-    particles.push(p);
+    particlePool.push(p);
   }
 }
 
 function updateParticles(dt){
-  for(let i=particles.length-1;i>=0;i--){
-    const p = particles[i];
-    p.userData.life -= dt;
-    if(p.userData.life <= 0){
+  for(let i=particlePool.length-1;i>=0;i--){
+    const p=particlePool[i];
+    p.userData.life-=p.userData.decay*dt;
+    if(p.userData.life<=0){
       particleGroup.remove(p);
-      p.geometry.dispose();
-      p.material.dispose();
-      particles.splice(i,1);
+      particlePool.splice(i,1);
       continue;
     }
-    p.position.addScaledVector(p.userData.vel, dt);
-    p.material.opacity = clamp(p.userData.life,0,1);
-    p.material.transparent = true;
+    p.position.addScaledVector(p.userData.vel,dt);
+    p.userData.vel.y+=CFG.GRAVITY*0.3*dt;
+    p.material.opacity=clamp(p.userData.life,0,1);
   }
 }
 
-/* =========================
-   Mission system
-   ========================= */
-function startMission(){
-  missionActive = true;
-  missionStartTime = now();
-  missionTimer = 0;
-  missionProgress = 0;
-  document.getElementById('missionTitle').textContent = `Collect ${CONFIG.missionCount} artifacts`;
-  log("Mission started: Collect artifacts scattered across the terrain.");
-  updateMinimap();
-}
+/* ================================================================
+   SECTION 10 — DUST / ATMOSPHERE PARTICLES
+   ================================================================ */
+let dustPoints=null;
+let dustPositions=null;
 
-function completeMission(){
-  missionActive = false;
-  const timeTaken = Math.floor(missionTimer);
-  log(`Mission complete! Time: ${formatTime(timeTaken)}. Rewards: oxygen refill and XP.`);
-  player.oxygen = clamp(player.oxygen + 40, 0, 100);
-  document.getElementById('missionTitle').textContent = `Mission complete! Time ${formatTime(timeTaken)}`;
-}
-
-function formatTime(s){
-  const m = Math.floor(s/60);
-  const sec = Math.floor(s%60).toString().padStart(2,'0');
-  return `${m}:${sec}`;
-}
-
-/* =========================
-   Minimap
-   ========================= */
-const miniCanvas = document.getElementById('mini');
-const miniCtx = miniCanvas.getContext('2d');
-
-function updateMinimap(){
-  const w = miniCanvas.width;
-  const h = miniCanvas.height;
-  miniCtx.clearRect(0,0,w,h);
-  miniCtx.fillStyle = '#12080a';
-  miniCtx.fillRect(0,0,w,h);
-  const grd = miniCtx.createLinearGradient(0,0,w,h);
-  grd.addColorStop(0,'#3b1b12');
-  grd.addColorStop(1,'#8b4b2f');
-  miniCtx.fillStyle = grd;
-  miniCtx.fillRect(0,0,w,h);
-
-  for(const b of missionBeacons){
-    if(b.collected) continue;
-    const p = worldToMini(b.pos.x, b.pos.z, w, h);
-    miniCtx.fillStyle = '#ff6f3c';
-    miniCtx.beginPath();
-    miniCtx.arc(p.x, p.y, 5, 0, Math.PI*2);
-    miniCtx.fill();
+function createDustField(){
+  const count=3000;
+  const geo=new THREE.BufferGeometry();
+  const pos=new Float32Array(count*3);
+  const half=CFG.TERRAIN_SIZE*0.45;
+  for(let i=0;i<count;i++){
+    pos[i*3+0]=rand(-half,half);
+    pos[i*3+1]=rand(2,100);
+    pos[i*3+2]=rand(-half,half);
   }
-
-  const pp = worldToMini(player.pos.x, player.pos.z, w, h);
-  miniCtx.fillStyle = '#a6f0ff';
-  miniCtx.beginPath();
-  miniCtx.arc(pp.x, pp.y, 6, 0, Math.PI*2);
-  miniCtx.fill();
-
-  miniCtx.strokeStyle = '#a6f0ff';
-  miniCtx.beginPath();
-  miniCtx.moveTo(pp.x, pp.y);
-  const dir = new THREE.Vector3(Math.sin(player.rotation),0,Math.cos(player.rotation));
-  const p2 = worldToMini(player.pos.x + dir.x*18, player.pos.z + dir.z*18, w, h);
-  miniCtx.lineTo(p2.x, p2.y);
-  miniCtx.stroke();
+  dustPositions=pos;
+  geo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  const mat=new THREE.PointsMaterial({color:0xffccaa,size:1.5,transparent:true,opacity:0.06,sizeAttenuation:true});
+  dustPoints=new THREE.Points(geo,mat);
+  scene.add(dustPoints);
 }
 
-function worldToMini(x,z,w,h){
-  const half = CONFIG.terrainSize/2;
-  const nx = (x + half) / CONFIG.terrainSize;
-  const nz = (z + half) / CONFIG.terrainSize;
-  return { x: nx * w, y: (1 - nz) * h };
+function updateDust(dt,stormIntensity){
+  if(!dustPoints)return;
+  const pos=dustPoints.geometry.attributes.position;
+  const spd=4+stormIntensity*25;
+  const half=CFG.TERRAIN_SIZE*0.45;
+  for(let i=0;i<pos.count;i++){
+    let x=pos.getX(i)+spd*dt*(0.5+Math.sin(i*0.3)*0.5);
+    let z=pos.getZ(i)+spd*dt*0.2;
+    let y=pos.getY(i)+Math.sin(now()*0.3+i*0.01)*0.1;
+    if(x>half)x-=half*2;
+    if(z>half)z-=half*2;
+    pos.setXYZ(i,x,y,z);
+  }
+  pos.needsUpdate=true;
+  dustPoints.material.opacity=0.04+stormIntensity*0.25;
+  dustPoints.material.size=1.5+stormIntensity*6;
 }
 
-/* =========================
-   Interaction (E)
-   ========================= */
-window.addEventListener('keydown', (e)=>{
-  if(e.key.toLowerCase() === 'e'){
-    const reach = 3.5;
-    let found = false;
-    for(const c of propsGroup.children){
-      const d = c.position.distanceTo(player.pos);
-      if(d < reach && c.userData && c.userData.interactable){
-        found = true;
-        if(typeof c.userData.onInteract === 'function') c.userData.onInteract();
-      }
-    }
-    if(!found) log("No interactable object nearby.");
+/* ================================================================
+   SECTION 11 — PLAYER
+   ================================================================ */
+const player={
+  group:null,
+  pos:new THREE.Vector3(0,200,0),
+  vel:new THREE.Vector3(0,0,0),
+  rotation:0,
+  onGround:false,
+  health:100,
+  oxygen:100,
+  stamina:100,
+  suit:100,
+  alive:true,
+  inVehicle:null,
+  lastJump:0,
+  footstepTimer:0,
+  deathCause:'Unknown',
+};
+
+function createPlayer(){
+  if(player.group)scene.remove(player.group);
+  const g=new THREE.Group();
+
+  // Body — layered capsule-like shape
+  const torsoGeo=new THREE.CylinderGeometry(0.42,0.38,1.0,10);
+  const suitMat=new THREE.MeshStandardMaterial({color:0xd8c8b0,roughness:0.75,metalness:0.15});
+  const torso=new THREE.Mesh(torsoGeo,suitMat);
+  torso.position.y=1.1;
+  torso.castShadow=true;
+  g.add(torso);
+
+  // Legs
+  const legGeo=new THREE.CylinderGeometry(0.18,0.16,0.9,8);
+  const legMat=new THREE.MeshStandardMaterial({color:0xb8a890,roughness:0.8,metalness:0.1});
+  const legL=new THREE.Mesh(legGeo,legMat);
+  legL.position.set(-0.22,0.4,0); legL.castShadow=true; g.add(legL);
+  const legR=new THREE.Mesh(legGeo,legMat);
+  legR.position.set(0.22,0.4,0); legR.castShadow=true; g.add(legR);
+
+  // Boots
+  const bootGeo=new THREE.BoxGeometry(0.3,0.2,0.4);
+  const bootMat=new THREE.MeshStandardMaterial({color:0x444444,roughness:0.9,metalness:0.3});
+  const bL=new THREE.Mesh(bootGeo,bootMat); bL.position.set(-0.22,0.02,0.05); g.add(bL);
+  const bR=new THREE.Mesh(bootGeo,bootMat); bR.position.set(0.22,0.02,0.05); g.add(bR);
+
+  // Backpack (life support)
+  const packGeo=new THREE.BoxGeometry(0.55,0.65,0.25);
+  const packMat=new THREE.MeshStandardMaterial({color:0x888888,roughness:0.6,metalness:0.5});
+  const pack=new THREE.Mesh(packGeo,packMat);
+  pack.position.set(0,1.1,-0.4); g.add(pack);
+
+  // Helmet
+  const helmGeo=new THREE.SphereGeometry(0.5,14,12);
+  const helmMat=new THREE.MeshStandardMaterial({color:0x222222,roughness:0.2,metalness:0.3,transparent:true,opacity:0.85});
+  const helm=new THREE.Mesh(helmGeo,helmMat);
+  helm.position.y=2.0; helm.castShadow=true; g.add(helm);
+
+  // Visor
+  const visorGeo=new THREE.SphereGeometry(0.42,14,10,0.3,2.6,0.5,1.8);
+  const visorMat=new THREE.MeshStandardMaterial({color:0x88ccff,roughness:0.05,metalness:0.6,transparent:true,opacity:0.5});
+  const visor=new THREE.Mesh(visorGeo,visorMat);
+  visor.position.set(0.04,2.02,0.12); g.add(visor);
+
+  // Helmet light
+  const helmLight=new THREE.SpotLight(0xffffff,0.8,20,0.4,0.5,1.5);
+  helmLight.position.set(0,2.1,0);
+  helmLight.target.position.set(0,2.1,-5);
+  g.add(helmLight);
+  g.add(helmLight.target);
+
+  player.group=g;
+  player.group.position.copy(player.pos);
+  scene.add(g);
+}
+
+/* ================================================================
+   SECTION 12 — CAMERA CONTROL
+   ================================================================ */
+let camYaw=0, camPitch=0.2;
+let camTarget=new THREE.Vector3();
+let camActual=new THREE.Vector3();
+
+function updateCamera(dt){
+  const pp=player.pos;
+  const behind=new THREE.Vector3(
+    -Math.sin(camYaw)*CFG.CAM_DIST,
+    CFG.CAM_HEIGHT,
+    -Math.cos(camYaw)*CFG.CAM_DIST
+  );
+  camTarget.copy(pp).add(behind);
+
+  // terrain collision for camera
+  const camGroundY=sampleHeight(camTarget.x,camTarget.z);
+  if(camTarget.y<camGroundY+1.5)camTarget.y=camGroundY+1.5;
+
+  camActual.lerp(camTarget,clamp(dt*CFG.CAM_LERP,0,1));
+  camera.position.copy(camActual);
+
+  const lookAt=new THREE.Vector3(pp.x,pp.y+1.4,pp.z);
+  camera.lookAt(lookAt);
+}
+
+/* ================================================================
+   SECTION 13 — INPUT
+   ================================================================ */
+const keys={};
+let mouseDX=0, mouseDY=0;
+let pointerLocked=false;
+
+document.addEventListener('keydown',(e)=>{
+  keys[e.code]=true;
+  if(e.code==='KeyI'){ e.preventDefault(); toggleInventory(); }
+  if(e.code==='KeyC'){ e.preventDefault(); toggleCraft(); }
+  if(e.code==='KeyE'){ tryInteract(); }
+  if(e.code==='KeyV'){ tryVehicle(); }
+  if(e.code==='KeyP'){ saveGame(); }
+  if(e.code==='KeyL'){ loadGame(); }
+});
+document.addEventListener('keyup',(e)=>{ keys[e.code]=false; });
+
+canvas3d.addEventListener('click',()=>{
+  if(!pointerLocked){
+    canvas3d.requestPointerLock();
   }
 });
+document.addEventListener('pointerlockchange',()=>{
+  pointerLocked=document.pointerLockElement===canvas3d;
+});
+document.addEventListener('mousemove',(e)=>{
+  if(!pointerLocked)return;
+  mouseDX+=e.movementX;
+  mouseDY+=e.movementY;
+});
 
-/* =========================
-   Inventory & Crafting
-   ========================= */
-let inventory = [];
+/* ================================================================
+   SECTION 14 — MOVEMENT & PHYSICS
+   ================================================================ */
+function updatePlayer(dt){
+  if(!player.alive||player.inVehicle)return;
 
-function initInventory(){
-  const grid = document.getElementById('invGrid');
-  grid.innerHTML = '';
-  for(let i=0;i<CONFIG.maxInventorySlots;i++){
-    const slot = document.createElement('div');
-    slot.className = 'inv-slot';
-    slot.dataset.index = i;
-    slot.textContent = '';
-    grid.appendChild(slot);
-  }
-  renderInventory();
-}
+  // Mouse look
+  const lookSens=0.0022;
+  camYaw-=mouseDX*lookSens;
+  camPitch=clamp(camPitch-mouseDY*lookSens*0.6,-0.3,0.8);
+  mouseDX=0; mouseDY=0;
 
-function addItemToInventory(item){
-  const existing = inventory.find(it => it.id === item.id);
-  if(existing){
-    existing.qty += item.qty;
+  // Input axes
+  const fwd=(keys['KeyW']?1:0)-(keys['KeyS']?1:0);
+  const str=(keys['KeyD']?1:0)-(keys['KeyA']?1:0);
+  const sprinting=keys['ShiftLeft']&&player.stamina>2;
+
+  // Stamina
+  if(sprinting&&(fwd!==0||str!==0)){
+    player.stamina=clamp(player.stamina-CFG.STAMINA_DRAIN*dt,0,100);
   } else {
-    inventory.push({id:item.id, name:item.name, qty:item.qty});
+    player.stamina=clamp(player.stamina+CFG.STAMINA_REGEN*dt,0,100);
   }
-  renderInventory();
-  log(`Picked up ${item.name} x${item.qty}`);
-}
 
-function renderInventory(){
-  const grid = document.getElementById('invGrid');
-  const slots = grid.children;
-  for(let i=0;i<slots.length;i++){
-    const s = slots[i];
-    const it = inventory[i];
-    if(it){
-      s.textContent = `${it.name} x${it.qty}`;
-    } else {
-      s.textContent = '';
-    }
+  const speed=CFG.PLAYER_SPEED*(sprinting&&player.stamina>0?CFG.SPRINT_MULT:1);
+
+  let moveX=0,moveZ=0;
+  if(fwd!==0||str!==0){
+    const sinY=Math.sin(camYaw), cosY=Math.cos(camYaw);
+    moveX=(fwd*sinY + str*cosY)*speed;
+    moveZ=(fwd*cosY - str*sinY)*speed;
   }
-}
 
-document.getElementById('invBtn').addEventListener('click', ()=> {
-  toggleInventory();
-});
-document.getElementById('closeInv').addEventListener('click', ()=> {
-  toggleInventory(false);
-});
-document.getElementById('dropAll').addEventListener('click', ()=> {
-  inventory = [];
-  renderInventory();
-  log("Dropped all items.");
-});
+  // Smooth velocity
+  player.vel.x=lerp(player.vel.x,moveX,clamp(dt*9,0,1));
+  player.vel.z=lerp(player.vel.z,moveZ,clamp(dt*9,0,1));
 
-function toggleInventory(force){
-  const inv = document.getElementById('inventory');
-  if(typeof force === 'boolean'){
-    inv.style.display = force ? 'block' : 'none';
-    inv.setAttribute('aria-hidden', !force);
+  // Gravity
+  player.vel.y+=CFG.GRAVITY*dt;
+
+  // Jump
+  if(keys['Space']&&player.onGround&&(now()-player.lastJump)>0.35){
+    player.vel.y=CFG.JUMP_VEL;
+    player.onGround=false;
+    player.lastJump=now();
+  }
+
+  // Integrate
+  const newPos=new THREE.Vector3(
+    player.pos.x+player.vel.x*dt,
+    player.pos.y+player.vel.y*dt,
+    player.pos.z+player.vel.z*dt
+  );
+
+  // Terrain clamp
+  const groundY=sampleHeight(newPos.x,newPos.z);
+  const footY=groundY+0.02;
+  if(newPos.y<=footY){
+    newPos.y=footY;
+    player.vel.y=0;
+    player.onGround=true;
   } else {
-    const show = inv.style.display !== 'block';
-    inv.style.display = show ? 'block' : 'none';
-    inv.setAttribute('aria-hidden', !show);
+    player.onGround=false;
+  }
+
+  // World bounds
+  const half=CFG.TERRAIN_SIZE/2-10;
+  newPos.x=clamp(newPos.x,-half,half);
+  newPos.z=clamp(newPos.z,-half,half);
+  player.pos.copy(newPos);
+
+  // Mesh facing
+  if(Math.abs(moveX)+Math.abs(moveZ)>0.1){
+    const targetRot=Math.atan2(moveX,moveZ);
+    player.rotation=lerpAngle(player.rotation,targetRot,clamp(dt*10,0,1));
+    player.group.rotation.y=player.rotation;
+  }
+  player.group.position.copy(player.pos);
+
+  // Footstep bob
+  if(player.onGround&&(Math.abs(moveX)+Math.abs(moveZ)>1)){
+    player.footstepTimer+=dt*(sprinting?2.5:1.6);
+    player.group.position.y+=Math.abs(Math.sin(player.footstepTimer*Math.PI))*0.08;
   }
 }
 
-/* Crafting (simple) */
-const RECIPES = [
-  {id:'oxygen_pack', requires:[{id:'data_chip',qty:2}], result:{id:'oxygen_pack',name:'Oxygen Pack',qty:1}},
-  {id:'repair_kit', requires:[{id:'data_chip',qty:1}], result:{id:'repair_kit',name:'Repair Kit',qty:1}}
-];
+/* ================================================================
+   SECTION 15 — VITALS (OXYGEN, HEALTH, SUIT)
+   ================================================================ */
+let stormActive=false;
+let stormTimer=0;
+let stormIntensity=0;
 
-function craft(recipeId){
-  const r = RECIPES.find(x=>x.id===recipeId);
-  if(!r) return false;
-  for(const req of r.requires){
-    const invItem = inventory.find(it=>it.id===req.id);
-    if(!invItem || invItem.qty < req.qty) return false;
-  }
-  for(const req of r.requires){
-    const invItem = inventory.find(it=>it.id===req.id);
-    invItem.qty -= req.qty;
-    if(invItem.qty <= 0) inventory = inventory.filter(it=>it.qty>0);
-  }
-  addItemToInventory(r.result);
-  log(`Crafted ${r.result.name}`);
-  return true;
-}
+function updateVitals(dt){
+  if(!player.alive)return;
+  const inStorm=stormActive;
 
-/* =========================
-   Save / Load
-   ========================= */
-function saveGame(){
-  const state = {
-    seed: CONFIG.seed,
-    player: {
-      pos: player.pos.toArray(),
-      health: player.health,
-      oxygen: player.oxygen,
-      inventory: inventory
-    },
-    mission: {
-      active: missionActive,
-      progress: missionProgress,
-      beacons: missionBeacons.map(b => ({x:b.pos.x,y:b.pos.y,z:b.pos.z, collected: b.collected}))
-    },
-    time: Date.now()
-  };
-  localStorage.setItem('milesmars_save', JSON.stringify(state));
-  log("Game saved.");
-}
-function loadGame(){
-  const raw = localStorage.getItem('milesmars_save');
-  if(!raw){ log("No save found."); return; }
-  try{
-    const state = JSON.parse(raw);
-    player.pos.fromArray(state.player.pos);
-    player.health = state.player.health;
-    player.oxygen = state.player.oxygen;
-    inventory = state.player.inventory || [];
-    missionActive = state.mission.active;
-    missionProgress = state.mission.progress;
-    for(let i=0;i<missionBeacons.length;i++){
-      if(state.mission.beacons[i]) missionBeacons[i].collected = state.mission.beacons[i].collected;
+  // Oxygen drain
+  player.oxygen=clamp(player.oxygen-CFG.OXY_DRAIN*dt*(inStorm?2.2:1),0,100);
+
+  // Health damage when oxygen empty
+  if(player.oxygen<=0){
+    player.health=clamp(player.health-CFG.HEALTH_OXY_DMG*dt,0,100);
+    flashOxyVignette();
+  }
+
+  // Suit wear
+  player.suit=clamp(player.suit-CFG.SUIT_DRAIN*dt*(inStorm?3:1),0,100);
+
+  // Suit breach damage
+  if(player.suit<=0){
+    player.health=clamp(player.health-1.0*dt,0,100);
+  }
+
+  // Storm logic
+  if(!stormActive&&Math.random()<CFG.STORM_CHANCE){
+    triggerStorm();
+  }
+  if(stormActive){
+    stormTimer-=dt;
+    stormIntensity=clamp(stormIntensity+(stormTimer>CFG.STORM_DURATION*0.5?0.5:-0.4)*dt,0,1);
+    if(stormTimer<=0){
+      stormActive=false;
+      stormIntensity=0;
+      log('Dust storm has passed.','info');
+      toast('Dust storm cleared.','success');
+      checkObjective(3);
     }
-    renderInventory();
-    log("Game loaded.");
-  }catch(e){
-    log("Failed to load save.");
+  } else {
+    stormIntensity=clamp(stormIntensity-0.2*dt,0,1);
+  }
+
+  // Death
+  if(player.health<=0&&player.alive){
+    killPlayer();
   }
 }
 
-/* Autosave */
-setInterval(()=>{ saveGame(); }, CONFIG.autosaveInterval*1000);
+function addOxygen(amt){
+  player.oxygen=clamp(player.oxygen+amt,0,100);
+}
+function addHealth(amt){
+  player.health=clamp(player.health+amt,0,100);
+}
 
-/* =========================
-   NPCs (simple AI)
-   ========================= */
-const npcGroup = new THREE.Group();
-npcGroup.name = "npcs";
+function killPlayer(){
+  player.alive=false;
+  const ds=document.getElementById('deathScreen');
+  document.getElementById('deathCause').textContent='Cause: '+player.deathCause;
+  ds.classList.add('active');
+  log('FATAL: '+player.deathCause,'danger');
+}
+
+function respawn(){
+  player.alive=true;
+  player.health=100;
+  player.oxygen=80;
+  player.stamina=100;
+  player.suit=75;
+  player.vel.set(0,0,0);
+  const by=sampleHeight(basePos.x,basePos.z);
+  player.pos.set(basePos.x,by+2,basePos.z);
+  player.group.position.copy(player.pos);
+  document.getElementById('deathScreen').classList.remove('active');
+  log('Respawned at base camp.','ok');
+}
+
+/* Storm */
+function triggerStorm(){
+  stormActive=true;
+  stormTimer=CFG.STORM_DURATION+rand(-10,10);
+  log('WARNING: Dust storm incoming!','danger');
+  toast('STORM ALERT — Seek shelter','danger');
+  document.getElementById('envStorm').style.color='var(--col-danger)';
+  document.getElementById('envStorm').textContent='ACTIVE';
+}
+
+/* Vignette */
+let oxyVigTimer=0;
+function flashOxyVignette(){
+  const el=document.getElementById('oxyVignette');
+  el.style.opacity='1';
+  el.style.background='radial-gradient(ellipse at center, transparent 30%, rgba(0,50,120,0.65) 100%)';
+  clearTimeout(oxyVigTimer);
+  oxyVigTimer=setTimeout(()=>{ el.style.opacity='0'; },600);
+}
+
+function flashDamage(){
+  const el=document.getElementById('dmgFlash');
+  el.style.background='rgba(200,20,20,0.35)';
+  setTimeout(()=>{ el.style.background='rgba(200,20,20,0)'; },180);
+}
+
+/* ================================================================
+   SECTION 16 — NPC COLONISTS
+   ================================================================ */
+const npcList=[];
+const npcGroup=new THREE.Group();
+npcGroup.name='npcs';
 scene.add(npcGroup);
-let npcs = [];
 
 function spawnNPCs(){
-  const size = CONFIG.terrainSize;
-  for(let i=0;i<CONFIG.npcCount;i++){
-    const rx = (Math.random()-0.5) * size * 0.6;
-    const rz = (Math.random()-0.5) * size * 0.6;
-    const y = sampleTerrainHeight(rx, rz);
-    const npc = createNPC(rx, y + 1.0, rz);
-    npcGroup.add(npc.obj);
-    npcs.push(npc);
+  const half=CFG.TERRAIN_SIZE/2-100;
+  for(let i=0;i<CFG.NPC_COUNT;i++){
+    let rx,rz,ry;
+    do{
+      rx=rand(-half,half);
+      rz=rand(-half,half);
+      ry=sampleHeight(rx,rz);
+    }while(ry<-50||ry>120);
+    const npc=createNPC(rx,ry,rz,i);
+    npcGroup.add(npc.group);
+    npcList.push(npc);
   }
 }
 
-function createNPC(x,y,z){
-  const g = new THREE.Group();
-  const body = new THREE.CapsuleGeometry(0.5, 0.8, 4, 8);
-  const mat = new THREE.MeshStandardMaterial({color:0x9aa7b0, roughness:0.9});
-  const mesh = new THREE.Mesh(body, mat);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  mesh.position.y = 1.0;
-  g.add(mesh);
+function createNPC(x,y,z,idx){
+  const g=new THREE.Group();
+  const hues=[0.05,0.06,0.07,0.55,0.6];
+  const col=new THREE.Color().setHSL(hues[idx%hues.length],0.4,0.55);
+  const bodyMat=new THREE.MeshStandardMaterial({color:col,roughness:0.8,metalness:0.1});
+  const body=new THREE.Mesh(new THREE.CylinderGeometry(0.35,0.32,1.0,8),bodyMat);
+  body.position.y=1.0; body.castShadow=true; g.add(body);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(0.38,10,8),new THREE.MeshStandardMaterial({color:0x333333,roughness:0.3,metalness:0.2}));
+  head.position.y=1.9; g.add(head);
+  const leg1=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.14,0.8,7),bodyMat);
+  leg1.position.set(-0.18,0.35,0); g.add(leg1);
+  const leg2=new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.14,0.8,7),bodyMat);
+  leg2.position.set(0.18,0.35,0); g.add(leg2);
   g.position.set(x,y,z);
-  const npc = {
-    id: uid('npc'),
-    obj: g,
-    pos: new THREE.Vector3(x,y,z),
-    velocity: new THREE.Vector3(),
-    state: 'idle',
-    target: null,
-    patrolTimer: Math.random()*8,
-    health: 100
+  const npc={
+    id:uid(),
+    group:g,
+    pos:new THREE.Vector3(x,y,z),
+    vel:new THREE.Vector3(),
+    state:'idle',
+    timer:rand(2,8),
+    target:null,
+    speed:1.2+rand(0,0.8),
+    walkPhase:rand(0,Math.PI*2),
+    health:100,
+    label:`Colonist-${String.fromCharCode(65+idx)}`
   };
-  g.userData = {npc:npc};
+  g.userData={npc,interactable:true,type:'npc',label:`Talk to ${npc.label}`,
+    onInteract:()=>{
+      const lines=[
+        `${npc.label}: "The dust gets into everything out here."`,
+        `${npc.label}: "I found three anomalies near the ridge yesterday."`,
+        `${npc.label}: "Watch your O2 near the crater — readings drop fast."`,
+        `${npc.label}: "Base camp is running low on repair kits."`,
+        `${npc.label}: "Rover fuel reserves are at 60%. Use them wisely."`,
+        `${npc.label}: "Storm season started early this cycle."`,
+      ];
+      log(lines[randInt(0,lines.length-1)],'info');
+    }
+  };
   return npc;
 }
 
 function updateNPCs(dt){
-  for(const n of npcs){
-    n.patrolTimer -= dt;
-    if(n.patrolTimer <= 0){
-      n.patrolTimer = 4 + Math.random()*8;
-      const r = 12 + Math.random()*40;
-      const ang = Math.random()*Math.PI*2;
-      const tx = n.pos.x + Math.cos(ang)*r;
-      const tz = n.pos.z + Math.sin(ang)*r;
-      const ty = sampleTerrainHeight(tx,tz);
-      n.target = new THREE.Vector3(tx, ty + 1.0, tz);
-      n.state = 'moving';
-    }
-    if(n.state === 'moving' && n.target){
-      const dir = new THREE.Vector3().subVectors(n.target, n.pos);
-      const dist = dir.length();
-      if(dist < 0.6){
-        n.state = 'idle';
-        n.target = null;
+  for(const n of npcList){
+    n.timer-=dt;
+    if(n.timer<=0){
+      n.timer=rand(3,9);
+      if(n.state==='idle'){
+        n.state='walk';
+        const ang=rand(0,Math.PI*2);
+        const dist=rand(8,30);
+        const tx=n.pos.x+Math.cos(ang)*dist;
+        const tz=n.pos.z+Math.sin(ang)*dist;
+        const ty=sampleHeight(tx,tz);
+        n.target=new THREE.Vector3(tx,ty,tz);
       } else {
-        dir.normalize();
-        n.velocity.x = lerp(n.velocity.x, dir.x*1.6, clamp(dt*4,0,1));
-        n.velocity.z = lerp(n.velocity.z, dir.z*1.6, clamp(dt*4,0,1));
-        n.velocity.y += CONFIG.gravity * dt;
-        const next = new THREE.Vector3().copy(n.pos).addScaledVector(n.velocity, dt);
-        const groundY = sampleTerrainHeight(next.x, next.z);
-        const footY = groundY + 1.0;
-        if(next.y <= footY){
-          next.y = footY;
-          n.velocity.y = 0;
-        }
-        n.pos.copy(next);
-        n.obj.position.copy(n.pos);
-        if(Math.abs(n.velocity.x) + Math.abs(n.velocity.z) > 0.001){
-          const yaw = Math.atan2(n.velocity.x, n.velocity.z);
-          n.obj.rotation.y = yaw;
-        }
+        n.state='idle'; n.target=null;
       }
     }
-    const d = n.pos.distanceTo(player.pos);
-    if(d < 6){
-      n.state = 'greet';
-      n.obj.rotation.y = Math.sin(now()*2 + n.pos.x*0.01)*0.2;
+    if(n.state==='walk'&&n.target){
+      const dir=new THREE.Vector3().subVectors(n.target,n.pos);
+      dir.y=0;
+      const dist=dir.length();
+      if(dist<0.8){n.state='idle';n.target=null;}
+      else{
+        dir.normalize();
+        n.vel.x=lerp(n.vel.x,dir.x*n.speed,clamp(dt*4,0,1));
+        n.vel.z=lerp(n.vel.z,dir.z*n.speed,clamp(dt*4,0,1));
+        n.vel.y+=CFG.GRAVITY*dt;
+        const np=new THREE.Vector3(n.pos.x+n.vel.x*dt,n.pos.y+n.vel.y*dt,n.pos.z+n.vel.z*dt);
+        const gy=sampleHeight(np.x,np.z);
+        if(np.y<=gy){np.y=gy;n.vel.y=0;}
+        n.pos.copy(np);
+        n.group.position.copy(n.pos);
+        if(dist>0.1)n.group.rotation.y=Math.atan2(n.vel.x,n.vel.z);
+        n.walkPhase+=dt*4;
+        n.group.children[1]&&(n.group.children[1].rotation.x=Math.sin(n.walkPhase)*0.18);
+      }
+    }
+    // Greet player
+    const dist2=n.pos.distanceTo(player.pos);
+    if(dist2<5&&n.state==='idle'){
+      n.group.rotation.y=Math.atan2(player.pos.x-n.pos.x,player.pos.z-n.pos.z);
     }
   }
 }
 
-/* =========================
-   Vehicles (Rover)
-   ========================= */
-const vehicleGroup = new THREE.Group();
-vehicleGroup.name = "vehicles";
+/* ================================================================
+   SECTION 17 — VEHICLES (ROVERS)
+   ================================================================ */
+const vehicleList=[];
+const vehicleGroup=new THREE.Group();
 scene.add(vehicleGroup);
-let vehicles = [];
 
 function spawnVehicles(){
-  const size = CONFIG.terrainSize;
-  for(let i=0;i<CONFIG.roverCount;i++){
-    const rx = (Math.random()-0.5) * size * 0.6;
-    const rz = (Math.random()-0.5) * size * 0.6;
-    const y = sampleTerrainHeight(rx, rz);
-    const v = createRover(rx, y + 0.6, rz);
-    vehicleGroup.add(v.obj);
-    vehicles.push(v);
+  const offsets=[{x:20,z:8},{x:-18,z:12}];
+  for(let i=0;i<CFG.ROVER_COUNT;i++){
+    const bx=basePos.x+(offsets[i]?.x||rand(-30,30));
+    const bz=basePos.z+(offsets[i]?.z||rand(-30,30));
+    const by=sampleHeight(bx,bz);
+    const v=buildRover(bx,by,bz);
+    vehicleGroup.add(v.group);
+    vehicleList.push(v);
   }
 }
 
-function createRover(x,y,z){
-  const g = new THREE.Group();
-  const body = new THREE.BoxGeometry(2.2, 0.8, 3.2);
-  const mat = new THREE.MeshStandardMaterial({color:0x334455, roughness:0.9});
-  const mesh = new THREE.Mesh(body, mat);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  mesh.position.y = 0.6;
-  g.add(mesh);
+function buildRover(x,y,z){
+  const g=new THREE.Group();
 
-  for(let i=0;i<4;i++){
-    const wgeo = new THREE.CylinderGeometry(0.4,0.4,0.4,12);
-    const wmat = new THREE.MeshStandardMaterial({color:0x111111, roughness:1});
-    const wheel = new THREE.Mesh(wgeo, wmat);
-    wheel.rotation.z = Math.PI/2;
-    const sx = (i<2)?-0.9:0.9;
-    const sz = (i%2===0)?-1.1:1.1;
-    wheel.position.set(sx, 0.25, sz);
-    g.add(wheel);
+  // Body
+  const bodyGeo=new THREE.BoxGeometry(2.4,0.7,3.8);
+  const bodyMat=new THREE.MeshStandardMaterial({color:0x445566,roughness:0.75,metalness:0.5});
+  const body=new THREE.Mesh(bodyGeo,bodyMat);
+  body.position.y=0.7; body.castShadow=true; body.receiveShadow=true; g.add(body);
+
+  // Cab
+  const cabGeo=new THREE.BoxGeometry(2.0,0.7,1.8);
+  const cabMat=new THREE.MeshStandardMaterial({color:0x667788,roughness:0.5,metalness:0.6});
+  const cab=new THREE.Mesh(cabGeo,cabMat);
+  cab.position.set(0,1.4,0.5); g.add(cab);
+
+  // Windshield
+  const windGeo=new THREE.BoxGeometry(1.6,0.5,0.12);
+  const windMat=new THREE.MeshStandardMaterial({color:0x88aacc,roughness:0.05,metalness:0.3,transparent:true,opacity:0.6});
+  const wind=new THREE.Mesh(windGeo,windMat);
+  wind.position.set(0,1.55,-0.7); g.add(wind);
+
+  // Wheels
+  const wheelGeo=new THREE.CylinderGeometry(0.45,0.45,0.38,16);
+  const wheelMat=new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:1.0});
+  const wheelPositions=[[-1.25,0.45,-1.3],[1.25,0.45,-1.3],[-1.25,0.45,1.3],[1.25,0.45,1.3]];
+  const wheels=[];
+  for(const [wx,wy,wz] of wheelPositions){
+    const w=new THREE.Mesh(wheelGeo,wheelMat);
+    w.position.set(wx,wy,wz);
+    w.rotation.z=Math.PI/2;
+    w.castShadow=true;
+    g.add(w);
+    wheels.push(w);
   }
 
+  // Roof rack / antenna
+  const antGeo=new THREE.CylinderGeometry(0.04,0.04,1.5,6);
+  const antMat=new THREE.MeshStandardMaterial({color:0x888888,roughness:0.5,metalness:0.7});
+  const ant=new THREE.Mesh(antGeo,antMat);
+  ant.position.set(0.7,2.15,0.5); g.add(ant);
+
+  // Headlights
+  const hlGeo=new THREE.SphereGeometry(0.18,8,6);
+  const hlMat=new THREE.MeshStandardMaterial({color:0xffffcc,emissive:0xffffcc,emissiveIntensity:1.5});
+  const hlL=new THREE.Mesh(hlGeo,hlMat); hlL.position.set(-0.7,0.9,-1.95); g.add(hlL);
+  const hlR=new THREE.Mesh(hlGeo,hlMat); hlR.position.set(0.7,0.9,-1.95); g.add(hlR);
+
+  const roverLight=new THREE.SpotLight(0xfff0cc,4,60,0.35,0.6,1.5);
+  roverLight.position.set(0,1.5,-1.9);
+  roverLight.target.position.set(0,0,-15);
+  g.add(roverLight); g.add(roverLight.target);
+
   g.position.set(x,y,z);
-  const rover = {
-    id: uid('rover'),
-    obj: g,
-    pos: new THREE.Vector3(x,y,z),
-    velocity: new THREE.Vector3(),
-    speed: 0,
-    maxSpeed: 12,
-    steering: 0,
-    driver: null
+
+  const rover={
+    id:uid(),
+    group:g,
+    wheels,
+    pos:new THREE.Vector3(x,y,z),
+    vel:new THREE.Vector3(),
+    rotation:0,
+    speed:0,
+    maxSpeed:22,
+    fuel:100,
+    occupied:false,
+  };
+  g.userData={rover,interactable:true,type:'vehicle',label:'Board Rover',
+    onInteract:()=>{ if(!rover.occupied)enterVehicle(rover); }
   };
   return rover;
 }
 
+function enterVehicle(rover){
+  player.inVehicle=rover;
+  rover.occupied=true;
+  player.group.visible=false;
+  document.getElementById('vehicleHud').style.display='block';
+  document.getElementById('crosshair').style.display='none';
+  log('Entered rover. WASD to drive.','ok');
+  toast('Boarded Rover','success');
+}
+
+function exitVehicle(){
+  if(!player.inVehicle)return;
+  const r=player.inVehicle;
+  player.inVehicle=null;
+  r.occupied=false;
+  r.speed=0;
+  r.vel.set(0,0,0);
+  player.pos.set(r.pos.x+3,r.pos.y+1.5,r.pos.z);
+  player.group.position.copy(player.pos);
+  player.group.visible=true;
+  document.getElementById('vehicleHud').style.display='none';
+  document.getElementById('crosshair').style.display='block';
+  log('Exited rover.','info');
+}
+
+function tryVehicle(){
+  if(player.inVehicle){ exitVehicle(); return; }
+  for(const v of vehicleList){
+    if(v.pos.distanceTo(player.pos)<5){
+      enterVehicle(v);
+      return;
+    }
+  }
+}
+
 function updateVehicles(dt){
-  for(const v of vehicles){
-    if(!v.driver){
-      v.speed = lerp(v.speed, 2 + Math.random()*4, dt*0.2);
-      const ang = Math.sin(now()*0.1 + v.pos.x*0.001) * 0.2;
-      v.velocity.x = Math.sin(ang) * v.speed;
-      v.velocity.z = Math.cos(ang) * v.speed;
-      v.velocity.y += CONFIG.gravity * dt;
-      const next = new THREE.Vector3().copy(v.pos).addScaledVector(v.velocity, dt);
-      const groundY = sampleTerrainHeight(next.x, next.z);
-      const footY = groundY + 0.6;
-      if(next.y <= footY){
-        next.y = footY;
-        v.velocity.y = 0;
+  for(const v of vehicleList){
+    if(v.occupied&&player.inVehicle===v){
+      const fwd=(keys['KeyW']?1:0)-(keys['KeyS']?1:0);
+      const str=(keys['KeyA']?1:0)-(keys['KeyD']?1:0);
+      v.speed=lerp(v.speed,fwd*v.maxSpeed,clamp(dt*3,0,1));
+      v.rotation+=str*1.5*dt*Math.sign(v.speed+0.001);
+      v.vel.x=Math.sin(v.rotation)*v.speed;
+      v.vel.z=Math.cos(v.rotation)*v.speed;
+      v.vel.y+=CFG.GRAVITY*dt;
+      const np=new THREE.Vector3(v.pos.x+v.vel.x*dt,v.pos.y+v.vel.y*dt,v.pos.z+v.vel.z*dt);
+      const gy=sampleHeight(np.x,np.z);
+      if(np.y<=gy+0.45){np.y=gy+0.45;v.vel.y=0;}
+      v.pos.copy(np);
+      v.group.position.copy(v.pos);
+      v.group.rotation.y=v.rotation;
+      // Player rides rover
+      player.pos.set(v.pos.x,v.pos.y+2.5,v.pos.z);
+      // Wheel spin
+      const wSpin=v.speed*dt*0.5;
+      for(const w of v.wheels) w.rotation.x+=wSpin;
+      // Fuel
+      v.fuel=clamp(v.fuel-Math.abs(v.speed)*0.008*dt,0,100);
+      // Update vehicle HUD
+      document.getElementById('vehSpeed').textContent=Math.abs(Math.round(v.speed*3.6));
+      document.getElementById('barFuel').style.width=v.fuel+'%';
+      // Mouse look for camera while in rover
+      camYaw-=mouseDX*0.0022;
+      mouseDX=0; mouseDY=0;
+      updateCamera(dt);
+    } else if(!v.occupied){
+      // Gentle terrain follow
+      const gy=sampleHeight(v.pos.x,v.pos.z);
+      if(v.pos.y>gy+0.55){
+        v.vel.y+=CFG.GRAVITY*dt;
+        v.pos.y+=v.vel.y*dt;
+        if(v.pos.y<gy+0.45){v.pos.y=gy+0.45;v.vel.y=0;}
+        v.group.position.y=v.pos.y;
       }
-      v.pos.copy(next);
-      v.obj.position.copy(v.pos);
-      if(Math.abs(v.velocity.x) + Math.abs(v.velocity.z) > 0.001){
-        const yaw = Math.atan2(v.velocity.x, v.velocity.z);
-        v.obj.rotation.y = yaw;
-      }
     }
   }
 }
 
-/* =========================
-   DOM markers for beacons
-   ========================= */
-function createDOMMarkers(){
-  // remove existing markers
-  const existing = document.querySelectorAll('.marker');
-  existing.forEach(e=>e.remove());
-  for(const b of missionBeacons){
-    const el = document.createElement('div');
-    el.className = 'marker';
-    el.innerHTML = '<div class="dot"></div>';
-    document.body.appendChild(el);
-    b.dom = el;
-  }
+/* ================================================================
+   SECTION 18 — MISSION SYSTEM
+   ================================================================ */
+let missionActive=false;
+let missionStartTime=0;
+let missionTimer=0;
+let missionProgress=0;
+let objectivesComplete=[false,false,false,false];
+let firstBeaconReached=false;
+
+function startMission(){
+  missionActive=true;
+  missionStartTime=now();
+  missionTimer=0;
+  missionProgress=0;
+  objectivesComplete=[false,false,false,false];
+  firstBeaconReached=false;
+  document.getElementById('missionLabel').textContent='MISSION: COLLECT DATA CORES';
+  document.getElementById('missionProgress').textContent='0/'+CFG.BEACON_COUNT;
+  log('MISSION STARTED: Collect '+CFG.BEACON_COUNT+' data cores.','ok');
+  toast('Mission started!','success');
 }
-function updateDOMMarkers(){
-  for(const b of missionBeacons){
-    if(!b.dom) continue;
-    if(b.collected){ b.dom.style.display = 'none'; continue; }
-    const screen = worldToScreen(b.pos.x, b.pos.y + 1.6, b.pos.z);
-    if(screen.z > 1 || screen.z < 0){
-      b.dom.style.display = 'none';
-    } else {
-      b.dom.style.display = 'block';
-      b.dom.style.left = `${screen.x}px`;
-      b.dom.style.top = `${screen.y}px`;
+
+function checkObjective(idx){
+  if(objectivesComplete[idx])return;
+  objectivesComplete[idx]=true;
+  const checks=['obj1Check','obj2Check','obj3Check','obj4Check'];
+  const texts=['obj1Text','obj2Text','obj3Text','obj4Text'];
+  document.getElementById(checks[idx]).classList.add('done');
+  document.getElementById(checks[idx]).textContent='✓';
+  document.getElementById(texts[idx]).classList.add('done');
+  log('Objective complete: '+document.getElementById(texts[idx]).textContent,'ok');
+}
+
+function updateMission(dt){
+  if(!missionActive)return;
+  missionTimer+=dt;
+  document.getElementById('missionTimer').textContent=formatTime(missionTimer);
+
+  // Check beacon proximity
+  for(const b of beacons){
+    if(b.collected)continue;
+    const dist=b.pos.distanceTo(player.pos);
+
+    // Interact prompt
+    if(dist<4){
+      showInteractPrompt(b.label);
+    }
+    if(dist<3 && keys['KeyE']){
+      collectBeacon(b);
+    }
+    if(dist<8&&!firstBeaconReached){
+      firstBeaconReached=true;
+      checkObjective(0);
     }
   }
-}
-function worldToScreen(x,y,z){
-  const vec = new THREE.Vector3(x,y,z);
-  vec.project(camera);
-  const xN = (vec.x + 1) / 2 * window.innerWidth;
-  const yN = (-vec.y + 1) / 2 * window.innerHeight;
-  return {x: xN, y: yN, z: vec.z};
-}
 
-/* =========================
-   Dust field and sky
-   ========================= */
-function createDustField(){
-  const dustGeo = new THREE.BufferGeometry();
-  const count = 1200;
-  const positions = new Float32Array(count*3);
-  for(let i=0;i<count;i++){
-    positions[i*3+0] = (Math.random()-0.5) * CONFIG.terrainSize * 0.9;
-    positions[i*3+1] = 20 + Math.random()*80;
-    positions[i*3+2] = (Math.random()-0.5) * CONFIG.terrainSize * 0.9;
+  // Check 3 cores collected
+  if(missionProgress>=3&&!objectivesComplete[1]) checkObjective(1);
+
+  // Check proximity to base for return
+  const distBase=player.pos.distanceTo(basePos);
+  if(distBase<12&&missionProgress>=CFG.BEACON_COUNT){
+    checkObjective(3);
+    completeMission();
   }
-  dustGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  const dustMat = new THREE.PointsMaterial({color:0xffd8c8, size:1.8, transparent:true, opacity:0.06});
-  const dust = new THREE.Points(dustGeo, dustMat);
-  scene.add(dust);
+
+  // Update HUD
+  document.getElementById('missionProgress').textContent=missionProgress+'/'+CFG.BEACON_COUNT;
 }
 
-/* =========================
-   Audio (ambient)
-   ========================= */
-(function createAudio(){
-  try{
-    const listener = new THREE.AudioListener();
-    camera.add(listener);
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.type = 'sine';
-    o.frequency.value = 36;
-    g.gain.value = 0.0006;
-    o.connect(g);
-    g.connect(ctx.destination);
-    o.start();
-    window._milesmars_audio = {ctx,o,g};
-  }catch(e){}
-})();
+function collectBeacon(b){
+  b.collected=true;
+  b.mesh.visible=false;
+  missionProgress++;
+  spawnParticles(b.pos.x,b.pos.y+3,b.pos.z,0xff7744,32,3,4);
+  addOxygen(15);
+  addItemToInventory({id:'data_core',name:'Data Core',icon:'💾',qty:1});
+  log('Data core collected! +15 O₂','ok');
+  toast('Data Core collected!','success');
+  flashDamage(); // repurposed as "collect flash" — override color
+  if(missionProgress>=3)checkObjective(1);
+}
 
-/* =========================
-   UI wiring (fixed)
-   ========================= */
-function wireUI(){
-  // Start mission
-  const startBtn = document.getElementById('startBtn');
-  const splashStart = document.getElementById('splashStart');
-  const splashPanel = document.getElementById('splash');
-  startBtn.addEventListener('click', ()=> {
-    startMission();
-    if(splashPanel) splashPanel.style.display = 'none';
-  });
-  splashStart.addEventListener('click', ()=> {
-    startMission();
-    if(splashPanel) splashPanel.style.display = 'none';
-  });
+function completeMission(){
+  missionActive=false;
+  const time=formatTime(missionTimer);
+  log('MISSION COMPLETE! Time: '+time+'. All objectives cleared.','ok');
+  toast('MISSION COMPLETE — '+time,'success');
+  document.getElementById('missionLabel').textContent='MISSION COMPLETE';
+  addOxygen(50);
+  addItemToInventory({id:'bonus_pack',name:'Bonus Supply',icon:'📦',qty:1});
+  for(let i=0;i<4;i++) checkObjective(i);
+}
 
-  // Inventory
-  document.getElementById('invBtn').addEventListener('click', ()=> toggleInventory());
-  document.getElementById('closeInv').addEventListener('click', ()=> toggleInventory(false));
-  document.getElementById('dropAll').addEventListener('click', ()=> { inventory = []; renderInventory(); log("Dropped all items."); });
+function formatTime(s){
+  const m=Math.floor(s/60);
+  return m+'m '+Math.floor(s%60).toString().padStart(2,'0')+'s';
+}
 
-  // Map
-  document.getElementById('mapBtn').addEventListener('click', ()=> {
-    const data = miniCanvas.toDataURL();
-    const w = window.open('');
-    if(w){
-      w.document.write(`<img src="${data}" style="width:100%"/>`);
-    } else {
-      log("Unable to open map window (popup blocked).");
+/* ================================================================
+   SECTION 19 — BEACONS ANIMATED UPDATE
+   ================================================================ */
+function updateBeacons(dt){
+  for(const b of beacons){
+    if(b.collected)continue;
+    const {orb,ring,pl}=b.mesh.userData;
+    if(ring) ring.rotation.y+=dt*1.1;
+    if(ring) ring.rotation.x+=dt*0.55;
+    if(orb){
+      const pulse=0.8+Math.sin(now()*2.2+b.pos.x*0.05)*0.6;
+      orb.material.emissiveIntensity=pulse*2;
+    }
+    if(pl) pl.intensity=2.5+Math.sin(now()*2.2)*1.5;
+  }
+}
+
+/* ================================================================
+   SECTION 20 — INTERACT SYSTEM
+   ================================================================ */
+let interactTarget=null;
+
+function tryInteract(){
+  let closest=null, closestDist=4.5;
+  // Check props group
+  propsGroup.traverse(obj=>{
+    if(obj.userData&&obj.userData.interactable){
+      const d=obj.position.distanceTo(player.pos);
+      if(d<closestDist){ closestDist=d; closest=obj; }
     }
   });
-
-  // Sprint button (press and hold)
-  const sprintBtn = document.getElementById('sprintBtn');
-  sprintBtn.addEventListener('mousedown', ()=> { keys['shift'] = true; sprintBtn.classList.add('active'); });
-  sprintBtn.addEventListener('mouseup', ()=> { keys['shift'] = false; sprintBtn.classList.remove('active'); });
-  sprintBtn.addEventListener('mouseleave', ()=> { keys['shift'] = false; sprintBtn.classList.remove('active'); });
-
-  // Jump button
-  const jumpBtn = document.getElementById('jumpBtn');
-  jumpBtn.addEventListener('click', ()=> { keys[' '] = true; setTimeout(()=> keys[' '] = false, 120); });
-
-  // Interact button
-  const interactBtn = document.getElementById('interactBtn');
-  interactBtn.addEventListener('click', ()=> {
-    const e = new KeyboardEvent('keydown', {key:'e'});
-    window.dispatchEvent(e);
+  // Check NPC group
+  npcGroup.traverse(obj=>{
+    if(obj.userData&&obj.userData.interactable){
+      const d=obj.position.distanceTo(player.pos);
+      if(d<closestDist){ closestDist=d; closest=obj; }
+    }
   });
-
-  // Save / Load / Reset
-  document.getElementById('saveBtn').addEventListener('click', saveGame);
-  document.getElementById('loadBtn').addEventListener('click', loadGame);
-  document.getElementById('resetBtn').addEventListener('click', ()=> location.reload());
-
-  // Splash helpers
-  document.getElementById('splashLearn').addEventListener('click', ()=> {
-    alert("WASD to move, Shift to sprint, Space to jump, Mouse to look, E to interact. Collect artifacts to complete the mission.");
-  });
-  document.getElementById('splashEditor').addEventListener('click', ()=> openEditor());
-
-  // Keyboard shortcuts
-  window.addEventListener('keydown', (e)=>{
-    if(e.key.toLowerCase() === 'i') toggleInventory();
-    if(e.key.toLowerCase() === 'p') saveGame();
-    if(e.key.toLowerCase() === 'l') loadGame();
-    if(e.key === 'F3') { debugMode = !debugMode; setDebugVisible(debugMode); log("Debug mode " + (debugMode ? "on" : "off")); }
-  });
-}
-wireUI();
-
-/* =========================
-   Debug overlay
-   ========================= */
-const debugOverlay = document.getElementById('debugOverlay');
-function setDebugVisible(v){
-  debugOverlay.style.display = v ? 'block' : 'none';
-}
-function updateDebug(){
-  if(!debugMode) return;
-  debugOverlay.textContent = `pos: ${player.pos.x.toFixed(1)}, ${player.pos.y.toFixed(1)}, ${player.pos.z.toFixed(1)} · hp:${Math.floor(player.health)} oxy:${Math.floor(player.oxygen)} mission:${missionProgress}/${CONFIG.missionCount}`;
-}
-
-/* =========================
-   Editor (simple)
-   ========================= */
-let editorOpen = false;
-function openEditor(){
-  editorOpen = !editorOpen;
-  if(editorOpen){
-    const panel = document.createElement('div');
-    panel.id = 'editorPanel';
-    panel.style.position = 'absolute';
-    panel.style.right = '16px';
-    panel.style.top = '80px';
-    panel.style.width = '420px';
-    panel.style.padding = '12px';
-    panel.style.background = 'rgba(8,8,10,0.95)';
-    panel.style.borderRadius = '10px';
-    panel.style.zIndex = 60;
-    panel.innerHTML = `<h3 style="margin:0 0 8px 0">World Editor</h3>
-      <div style="display:flex;gap:8px;margin-bottom:8px">
-        <button id="edAddBeacon" class="btn">Add Beacon</button>
-        <button id="edAddRock" class="btn secondary">Add Rock</button>
-      </div>
-      <div style="display:flex;gap:8px">
-        <button id="edClose" class="btn secondary">Close</button>
-      </div>`;
-    document.body.appendChild(panel);
-    document.getElementById('edAddBeacon').addEventListener('click', ()=> {
-      const rx = player.pos.x + Math.sin(player.rotation)*6;
-      const rz = player.pos.z + Math.cos(player.rotation)*6;
-      const y = sampleTerrainHeight(rx,rz);
-      const beacon = createBeacon();
-      beacon.position.set(rx, y + 2.2, rz);
-      propsGroup.add(beacon);
-      missionBeacons.push({obj:beacon, pos:new THREE.Vector3(rx,y,rz), collected:false});
-      createDOMMarkers();
-      updateMinimap();
-      log("Editor: Beacon added.");
-    });
-    document.getElementById('edAddRock').addEventListener('click', ()=> {
-      const rx = player.pos.x + Math.sin(player.rotation)*4;
-      const rz = player.pos.z + Math.cos(player.rotation)*4;
-      const y = sampleTerrainHeight(rx,rz);
-      const rockGeo = new THREE.IcosahedronGeometry(1,1);
-      const rockMat = new THREE.MeshStandardMaterial({color:0x6b4b3a, roughness:1});
-      const rock = new THREE.Mesh(rockGeo, rockMat);
-      const s = 1 + Math.random()*3;
-      rock.scale.setScalar(s);
-      rock.position.set(rx, y + s*0.5, rz);
-      rock.rotation.set(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
-      propsGroup.add(rock);
-      log("Editor: Rock added.");
-    });
-    document.getElementById('edClose').addEventListener('click', ()=> {
-      const p = document.getElementById('editorPanel');
-      if(p) p.remove();
-      editorOpen = false;
-    });
+  if(closest&&typeof closest.userData.onInteract==='function'){
+    closest.userData.onInteract();
   } else {
-    const p = document.getElementById('editorPanel');
-    if(p) p.remove();
+    log('Nothing to interact with nearby.','info');
   }
 }
 
-/* =========================
-   Initialization
-   ========================= */
-function init(){
-  createPlayer();
-  generateTerrain();
-  createDustField();
-  addRocksAndProps(terrainGeometry);
-  spawnNPCs();
-  spawnVehicles();
-  initInventory();
-  createDOMMarkers();
-  updateMinimap();
-  document.getElementById('missionTitle').textContent = `Ready — ${CONFIG.missionCount} artifacts`;
-  log("World generated. Seed: " + CONFIG.seed);
-  lastTime = now();
-  animate();
+let promptVisible=false, promptTimer=0;
+function showInteractPrompt(label){
+  document.getElementById('interactText').textContent=label;
+  document.getElementById('interactPrompt').style.opacity='1';
+  promptTimer=0.8;
+  promptVisible=true;
 }
-
-/* =========================
-   Animation loop
-   ========================= */
-let rafId;
-function animate(){
-  const t = now();
-  const dt = clamp(t - lastTime, 0, 0.05);
-  lastTime = t;
-
-  update(dt);
-
-  composer.render();
-
-  rafId = requestAnimationFrame(animate);
-}
-
-/* =========================
-   Window resize
-   ========================= */
-window.addEventListener('resize', onWindowResize);
-function onWindowResize(){
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  if(fxaaPass) fxaaPass.material.uniforms['resolution'].value.set(1 / window.innerWidth, 1 / window.innerHeight);
-}
-
-/* =========================
-   Misc helpers & fallbacks
-   ========================= */
-(function seedFallback(){
-  if(typeof Math.seedrandom !== 'function'){
-    Math.seedrandom = function(seed){
-      let s = seed || CONFIG.seed;
-      return function(){
-        s = (s * 9301 + 49297) % 233280;
-        return s / 233280;
-      };
-    };
+function updateInteractPrompt(dt){
+  if(!promptVisible)return;
+  promptTimer-=dt;
+  if(promptTimer<=0){
+    document.getElementById('interactPrompt').style.opacity='0';
+    promptVisible=false;
   }
-})();
+}
 
-/* =========================
-   Input shortcuts (ensured)
-   ========================= */
-window.addEventListener('keydown', (e)=>{
-  if(e.key.toLowerCase() === 'i'){
-    toggleInventory();
+/* ================================================================
+   SECTION 21 — INVENTORY
+   ================================================================ */
+let inventory=[];
+const SLOT_COUNT=CFG.INV_SLOTS;
+
+function initInventoryUI(){
+  const grid=document.getElementById('invGrid');
+  grid.innerHTML='';
+  for(let i=0;i<SLOT_COUNT;i++){
+    const s=document.createElement('div');
+    s.className='inv-slot';
+    s.dataset.idx=i;
+    grid.appendChild(s);
   }
-  if(e.key.toLowerCase() === 'p'){
+}
+
+function addItemToInventory(item){
+  const existing=inventory.find(it=>it.id===item.id);
+  if(existing){ existing.qty+=item.qty; }
+  else { inventory.push({...item}); }
+  renderInventory();
+}
+
+function removeFromInventory(id,qty=1){
+  const it=inventory.find(i=>i.id===id);
+  if(!it)return false;
+  it.qty-=qty;
+  if(it.qty<=0)inventory=inventory.filter(i=>i.qty>0);
+  renderInventory();
+  return true;
+}
+
+function renderInventory(){
+  const slots=document.getElementById('invGrid').children;
+  for(let i=0;i<slots.length;i++){
+    const s=slots[i];
+    const it=inventory[i];
+    if(it){
+      s.classList.add('filled');
+      s.innerHTML=`<div class="slot-icon">${it.icon||'📦'}</div><div class="slot-name">${it.name}</div><div class="slot-qty">${it.qty}</div>`;
+    } else {
+      s.classList.remove('filled');
+      s.innerHTML='';
+    }
+  }
+}
+
+function toggleInventory(force){
+  const el=document.getElementById('invOverlay');
+  if(typeof force==='boolean'){
+    el.classList.toggle('open',force);
+  } else {
+    el.classList.toggle('open');
+  }
+  if(el.classList.contains('open'))renderInventory();
+}
+
+/* ================================================================
+   SECTION 22 — CRAFTING
+   ================================================================ */
+const RECIPES=[
+  {id:'oxygen_tank', name:'Oxygen Tank',     icon:'🫁', result:{id:'oxygen_tank',name:'Oxygen Tank',icon:'🫁',qty:1},
+   requires:[{id:'data_core',qty:1}], desc:'Restore +50 O₂ on use' },
+  {id:'medkit',      name:'Med Kit',          icon:'💊', result:{id:'medkit',name:'Med Kit',icon:'💊',qty:1},
+   requires:[{id:'data_core',qty:1}], desc:'Restore +40 health' },
+  {id:'suit_patch',  name:'Suit Patch',       icon:'🛡️', result:{id:'suit_patch',name:'Suit Patch',icon:'🛡️',qty:1},
+   requires:[{id:'data_core',qty:1}], desc:'Restore +40 suit integrity' },
+  {id:'flare',       name:'Emergency Flare',  icon:'🔥', result:{id:'flare',name:'Emergency Flare',icon:'🔥',qty:2},
+   requires:[{id:'data_core',qty:2}], desc:'Marks location on minimap' },
+];
+
+function buildCraftUI(){
+  const list=document.getElementById('craftList');
+  list.innerHTML='';
+  for(const r of RECIPES){
+    const reqStr=r.requires.map(req=>`${req.qty}× ${req.id.replace(/_/g,' ')}`).join(', ');
+    const hasAll=r.requires.every(req=>{
+      const it=inventory.find(i=>i.id===req.id);
+      return it&&it.qty>=req.qty;
+    });
+    const item=document.createElement('div');
+    item.className='craft-item';
+    item.innerHTML=`
+      <div class="craft-item-icon">${r.icon}</div>
+      <div class="craft-item-info">
+        <div class="craft-item-name">${r.name}</div>
+        <div class="craft-item-req">${reqStr} → ${r.desc}</div>
+      </div>
+      <button class="craft-item-btn" ${hasAll?'':'disabled style="opacity:0.35;cursor:not-allowed;"'} data-recipe="${r.id}">CRAFT</button>
+    `;
+    list.appendChild(item);
+  }
+  list.querySelectorAll('button[data-recipe]').forEach(btn=>{
+    btn.addEventListener('click',()=>doCraft(btn.dataset.recipe));
+  });
+}
+
+function doCraft(recipeId){
+  const r=RECIPES.find(x=>x.id===recipeId);
+  if(!r)return;
+  const ok=r.requires.every(req=>{
+    const it=inventory.find(i=>i.id===req.id);
+    return it&&it.qty>=req.qty;
+  });
+  if(!ok){ toast('Missing materials','warning'); return; }
+  for(const req of r.requires) removeFromInventory(req.id,req.qty);
+  addItemToInventory(r.result);
+  log('Crafted: '+r.result.name,'ok');
+  toast('Crafted: '+r.result.name,'success');
+  buildCraftUI();
+}
+
+function toggleCraft(force){
+  const el=document.getElementById('craftPanel');
+  if(typeof force==='boolean'){
+    el.style.display=force?'block':'none';
+  } else {
+    el.style.display=el.style.display==='block'?'none':'block';
+  }
+  if(el.style.display==='block')buildCraftUI();
+}
+
+/* ================================================================
+   SECTION 23 — MINIMAP
+   ================================================================ */
+const miniCtx=document.getElementById('minimapCanvas').getContext('2d');
+const MINI_W=220, MINI_H=220;
+
+function updateMinimap(){
+  miniCtx.clearRect(0,0,MINI_W,MINI_H);
+  const grd=miniCtx.createRadialGradient(MINI_W/2,MINI_H/2,40,MINI_W/2,MINI_H/2,MINI_W/2);
+  grd.addColorStop(0,'#2a1008');
+  grd.addColorStop(0.5,'#1e0c06');
+  grd.addColorStop(1,'#12070400');
+  miniCtx.fillStyle=grd;
+  miniCtx.fillRect(0,0,MINI_W,MINI_H);
+
+  // Terrain hint lines
+  miniCtx.strokeStyle='rgba(120,60,30,0.12)';
+  for(let i=0;i<8;i++){
+    miniCtx.beginPath();
+    miniCtx.arc(MINI_W/2,MINI_H/2,20+i*14,0,Math.PI*2);
+    miniCtx.stroke();
+  }
+
+  // Base camp
+  const bp=wToM(basePos.x,basePos.z);
+  miniCtx.fillStyle='rgba(200,180,100,0.7)';
+  miniCtx.beginPath();
+  miniCtx.arc(bp.x,bp.y,6,0,Math.PI*2);
+  miniCtx.fill();
+  miniCtx.fillStyle='rgba(200,180,100,0.4)';
+  miniCtx.font='8px Share Tech Mono';
+  miniCtx.fillText('BASE',bp.x+7,bp.y+3);
+
+  // Beacons
+  for(const b of beacons){
+    if(b.collected)continue;
+    const mp=wToM(b.pos.x,b.pos.z);
+    const pulse=0.6+Math.sin(now()*3+b.pos.x)*0.4;
+    miniCtx.fillStyle=`rgba(255,120,60,${pulse})`;
+    miniCtx.beginPath();
+    miniCtx.arc(mp.x,mp.y,4,0,Math.PI*2);
+    miniCtx.fill();
+  }
+
+  // NPCs
+  for(const n of npcList){
+    const np=wToM(n.pos.x,n.pos.z);
+    miniCtx.fillStyle='rgba(100,200,100,0.5)';
+    miniCtx.beginPath();
+    miniCtx.arc(np.x,np.y,3,0,Math.PI*2);
+    miniCtx.fill();
+  }
+
+  // Player (with direction)
+  const pp=wToM(player.pos.x,player.pos.z);
+  miniCtx.fillStyle='rgba(180,230,255,0.95)';
+  miniCtx.beginPath();
+  miniCtx.arc(pp.x,pp.y,5,0,Math.PI*2);
+  miniCtx.fill();
+  miniCtx.strokeStyle='rgba(180,230,255,0.8)';
+  miniCtx.lineWidth=1.5;
+  miniCtx.beginPath();
+  miniCtx.moveTo(pp.x,pp.y);
+  const dx=Math.sin(camYaw), dz=Math.cos(camYaw);
+  const ep=wToM(player.pos.x+dx*25,player.pos.z+dz*25);
+  miniCtx.lineTo(ep.x,ep.y);
+  miniCtx.stroke();
+  miniCtx.lineWidth=1;
+}
+
+function wToM(wx,wz){
+  const half=CFG.TERRAIN_SIZE/2;
+  const nx=(wx+half)/CFG.TERRAIN_SIZE;
+  const nz=(wz+half)/CFG.TERRAIN_SIZE;
+  return{x:nx*MINI_W, y:(1-nz)*MINI_H};
+}
+
+/* ================================================================
+   SECTION 24 — HUD VITALS UPDATE
+   ================================================================ */
+function updateHUD(){
+  const h=clamp(player.health,0,100);
+  const o=clamp(player.oxygen,0,100);
+  const s=clamp(player.stamina,0,100);
+  const su=clamp(player.suit,0,100);
+
+  document.getElementById('barHealth').style.width=h+'%';
+  document.getElementById('valHealth').textContent=Math.floor(h);
+  document.getElementById('barOxygen').style.width=o+'%';
+  document.getElementById('valOxygen').textContent=Math.floor(o);
+  document.getElementById('barStamina').style.width=s+'%';
+  document.getElementById('valStamina').textContent=Math.floor(s);
+  document.getElementById('barSuit').style.width=su+'%';
+  document.getElementById('valSuit').textContent=Math.floor(su);
+
+  // Color warnings
+  document.getElementById('barHealth').style.background=
+    h<25?'linear-gradient(90deg,#ff1a1a,#ff4444)':
+    h<50?'linear-gradient(90deg,#c03030,#f45050)':
+    'linear-gradient(90deg,#c03030,#f45050)';
+
+  document.getElementById('barOxygen').style.background=
+    o<20?'linear-gradient(90deg,#ff3030,#ff6060)':
+    'linear-gradient(90deg,#2090c0,#50c0f0)';
+
+  // Environment data
+  const baseTemp=-63+stormIntensity*(-20)+Math.sin(now()*0.1)*3;
+  const windSpd=12+stormIntensity*60+Math.sin(now()*0.5)*4;
+  const dirs=['N','NE','E','SE','S','SW','W','NW'];
+  const dir=dirs[Math.floor((now()*0.08)%8)];
+  document.getElementById('envTemp').textContent=Math.floor(baseTemp)+'°C';
+  document.getElementById('envWind').textContent=Math.floor(windSpd)+' m/s '+dir;
+  document.getElementById('envAtmo').textContent=(0.6-stormIntensity*0.2).toFixed(1)+'% O₂';
+
+  if(!stormActive){
+    document.getElementById('envStorm').style.color='var(--col-ok)';
+    document.getElementById('envStorm').textContent='CLEAR';
+  }
+}
+
+/* ================================================================
+   SECTION 25 — WEATHER (DUST STORM VISUAL)
+   ================================================================ */
+const weatherCanvas=document.getElementById('weatherOverlay');
+const weatherCtx=weatherCanvas.getContext('2d');
+
+function resizeWeatherCanvas(){
+  weatherCanvas.width=window.innerWidth;
+  weatherCanvas.height=window.innerHeight;
+}
+resizeWeatherCanvas();
+
+function updateWeatherOverlay(){
+  const w=weatherCanvas.width, h=weatherCanvas.height;
+  weatherCtx.clearRect(0,0,w,h);
+  if(stormIntensity<0.05)return;
+  const alpha=stormIntensity*0.55;
+  const grd=weatherCtx.createLinearGradient(0,0,w,h);
+  grd.addColorStop(0,`rgba(160,80,30,${alpha})`);
+  grd.addColorStop(1,`rgba(100,40,10,${alpha*0.8})`);
+  weatherCtx.fillStyle=grd;
+  weatherCtx.fillRect(0,0,w,h);
+
+  // Flying dust streaks
+  weatherCtx.strokeStyle=`rgba(220,150,80,${stormIntensity*0.3})`;
+  weatherCtx.lineWidth=0.7;
+  const streakCount=Math.floor(stormIntensity*80);
+  for(let i=0;i<streakCount;i++){
+    const sx=(Math.sin(now()*0.7+i*137.5)*0.5+0.5)*w;
+    const sy=(Math.cos(now()*0.5+i*97.1)*0.5+0.5)*h;
+    const len=30+stormIntensity*120;
+    weatherCtx.beginPath();
+    weatherCtx.moveTo(sx,sy);
+    weatherCtx.lineTo(sx+len,sy+rand(-8,8));
+    weatherCtx.stroke();
+  }
+}
+
+/* ================================================================
+   SECTION 26 — TOAST NOTIFICATIONS
+   ================================================================ */
+function toast(msg,type='info',duration=2800){
+  const icons={success:'✓',warning:'⚠',danger:'✕',info:'◈'};
+  const cont=document.getElementById('toastContainer');
+  const t=document.createElement('div');
+  t.className=`toast ${type}`;
+  t.innerHTML=`<span>${icons[type]||'◈'}</span> ${msg}`;
+  cont.appendChild(t);
+  setTimeout(()=>{
+    t.style.opacity='0';
+    t.style.transform='translateX(12px)';
+    t.style.transition='opacity 0.4s,transform 0.4s';
+    setTimeout(()=>t.remove(),400);
+  },duration);
+}
+
+/* ================================================================
+   SECTION 27 — LOG
+   ================================================================ */
+function log(msg, type=''){
+  const logEl=document.getElementById('log');
+  const line=document.createElement('div');
+  line.className='log-line'+(type?' log-'+type:'');
+  const t=new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  line.textContent=`[${t}] ${msg}`;
+  logEl.prepend(line);
+  while(logEl.children.length>40)logEl.removeChild(logEl.lastChild);
+  setTimeout(()=>line.classList.add('fade'),6000);
+}
+
+/* ================================================================
+   SECTION 28 — SAVE / LOAD
+   ================================================================ */
+function saveGame(){
+  const data={
+    v:2,
+    ts:Date.now(),
+    player:{
+      px:player.pos.x,
+      py:player.pos.y,
+      pz:player.pos.z,
+      health:player.health,
+      oxygen:player.oxygen,
+      stamina:player.stamina,
+      suit:player.suit,
+    },
+    inventory:JSON.parse(JSON.stringify(inventory)),
+    beacons:beacons.map(b=>({id:b.id,collected:b.collected})),
+    mission:{
+      active:missionActive,
+      progress:missionProgress,
+      timer:missionTimer,
+      objectives:objectivesComplete.slice(),
+    },
+  };
+  try{
+    localStorage.setItem('milesmars_v2',JSON.stringify(data));
+    log('Game saved.','ok');
+    toast('Game saved.','success');
+  }catch(e){
+    log('Save failed: '+e.message,'danger');
+  }
+}
+
+function loadGame(){
+  try{
+    const raw=localStorage.getItem('milesmars_v2');
+    if(!raw){ log('No save file found.','warn'); toast('No save found.','warning'); return; }
+    const data=JSON.parse(raw);
+    if(data.player){
+      player.pos.set(data.player.px,data.player.py,data.player.pz);
+      player.health=data.player.health;
+      player.oxygen=data.player.oxygen;
+      player.stamina=data.player.stamina;
+      player.suit=data.player.suit||100;
+      player.group.position.copy(player.pos);
+      player.alive=true;
+    }
+    if(data.inventory) inventory=data.inventory;
+    if(data.beacons){
+      for(const bd of data.beacons){
+        const b=beacons.find(x=>x.id===bd.id);
+        if(b){ b.collected=bd.collected; if(bd.collected)b.mesh.visible=false; }
+      }
+    }
+    if(data.mission){
+      missionActive=data.mission.active;
+      missionProgress=data.mission.progress;
+      missionTimer=data.mission.timer;
+      objectivesComplete=data.mission.objectives||[false,false,false,false];
+    }
+    renderInventory();
+    log('Game loaded.','ok');
+    toast('Save loaded.','success');
+  }catch(e){
+    log('Load failed: '+e.message,'danger');
+  }
+}
+
+let autosaveTimer=0;
+function tickAutosave(dt){
+  autosaveTimer+=dt;
+  if(autosaveTimer>=CFG.AUTOSAVE_SECS){
+    autosaveTimer=0;
     saveGame();
+    log('Auto-saved.','info');
   }
-  if(e.key.toLowerCase() === 'l'){
-    loadGame();
+}
+
+/* ================================================================
+   SECTION 29 — SKY / ATMOSPHERIC EFFECTS
+   ================================================================ */
+function buildAtmosphere(){
+  // Horizon glow plane
+  const planeGeo=new THREE.PlaneGeometry(CFG.TERRAIN_SIZE*3,80);
+  planeGeo.rotateX(-Math.PI/2);
+  const planeMat=new THREE.MeshBasicMaterial({
+    color:0x220a05,
+    transparent:true,
+    opacity:0.6,
+    side:THREE.DoubleSide
+  });
+  const horizon=new THREE.Mesh(planeGeo,planeMat);
+  horizon.position.y=-15;
+  scene.add(horizon);
+
+  // Distant atmospheric haze spheres
+  for(let i=0;i<6;i++){
+    const ang=i*Math.PI/3;
+    const geo=new THREE.SphereGeometry(300,8,6);
+    const mat=new THREE.MeshBasicMaterial({
+      color:new THREE.Color().setHSL(0.04,0.6,0.04+i*0.01),
+      transparent:true,
+      opacity:0.12,
+      side:THREE.BackSide
+    });
+    const s=new THREE.Mesh(geo,mat);
+    s.position.set(Math.cos(ang)*1200,50,Math.sin(ang)*1200);
+    scene.add(s);
   }
-  if(e.key === 'F3'){
-    debugMode = !debugMode;
-    setDebugVisible(debugMode);
-    log("Debug mode " + (debugMode ? "on" : "off"));
+
+  // Stars (simple point cloud far away)
+  const starsGeo=new THREE.BufferGeometry();
+  const starPos=new Float32Array(1500*3);
+  for(let i=0;i<1500;i++){
+    const theta=rand(0,Math.PI*2);
+    const phi=rand(0,Math.PI*0.5);
+    const r=3500;
+    starPos[i*3]=r*Math.sin(phi)*Math.cos(theta);
+    starPos[i*3+1]=r*Math.cos(phi)+200;
+    starPos[i*3+2]=r*Math.sin(phi)*Math.sin(theta);
   }
+  starsGeo.setAttribute('position',new THREE.BufferAttribute(starPos,3));
+  const starsMat=new THREE.PointsMaterial({color:0xffeecc,size:2.5,transparent:true,opacity:0.35,sizeAttenuation:true});
+  scene.add(new THREE.Points(starsGeo,starsMat));
+
+  // Phobos — tiny moon
+  const moonGeo=new THREE.SphereGeometry(18,12,8);
+  const moonMat=new THREE.MeshStandardMaterial({color:0xaaa090,roughness:1,metalness:0});
+  const moon=new THREE.Mesh(moonGeo,moonMat);
+  moon.position.set(1200,900,800);
+  scene.add(moon);
+}
+
+/* ================================================================
+   SECTION 30 — SUPPLY CRATES (interactable pickups)
+   ================================================================ */
+const crateGroup=new THREE.Group();
+scene.add(crateGroup);
+
+function spawnCrates(){
+  const half=CFG.TERRAIN_SIZE/2-80;
+  for(let i=0;i<20;i++){
+    const rx=rand(-half,half);
+    const rz=rand(-half,half);
+    const ry=sampleHeight(rx,rz);
+    if(ry<-60||ry>180)continue;
+    buildCrate(rx,ry,rz);
+  }
+}
+
+function buildCrate(x,y,z){
+  const types=[
+    {id:'oxygen_canister',name:'O₂ Canister',icon:'🫧',qty:1,color:0x2255aa},
+    {id:'food_pack',     name:'Food Pack',   icon:'🥫',qty:1,color:0x884422},
+    {id:'repair_parts',  name:'Repair Parts',icon:'🔧',qty:1,color:0x446644},
+    {id:'data_chip',     name:'Data Chip',   icon:'💿',qty:randInt(1,3),color:0x444488},
+  ];
+  const type=types[randInt(0,types.length-1)];
+  const geo=new THREE.BoxGeometry(0.9,0.9,0.9);
+  const mat=new THREE.MeshStandardMaterial({color:type.color,roughness:0.6,metalness:0.5});
+  const crate=new THREE.Mesh(geo,mat);
+  crate.position.set(x,y+0.45,z);
+  crate.rotation.y=rand(0,Math.PI*2);
+  crate.castShadow=true;
+  crate.receiveShadow=true;
+
+  // Stripe detail
+  const stripeGeo=new THREE.BoxGeometry(0.92,0.15,0.92);
+  const stripeMat=new THREE.MeshStandardMaterial({color:0xffcc00,roughness:0.4});
+  const stripe=new THREE.Mesh(stripeGeo,stripeMat);
+  stripe.position.y=0.0;
+  crate.add(stripe);
+
+  // Small glow
+  const gl=new THREE.PointLight(new THREE.Color(type.color),1.2,5);
+  gl.position.y=0.6;
+  crate.add(gl);
+
+  crate.userData={
+    interactable:true,
+    type:'crate',
+    label:`Take ${type.name}`,
+    item:type,
+    onInteract:()=>{
+      addItemToInventory({id:type.id,name:type.name,icon:type.icon,qty:type.qty});
+      spawnParticles(x,y+1,z,type.color,16,1.5,2);
+      // Apply immediate effects
+      if(type.id==='oxygen_canister')addOxygen(25);
+      if(type.id==='repair_parts')player.suit=clamp(player.suit+20,0,100);
+      log('Picked up: '+type.name+(type.id==='oxygen_canister'?' (+25 O₂)':''),'ok');
+      crate.visible=false;
+      crate.userData.interactable=false;
+    }
+  };
+  crateGroup.add(crate);
+  return crate;
+}
+
+/* ================================================================
+   SECTION 31 — ITEM USE (consuming items from inventory)
+   ================================================================ */
+function useItem(id){
+  const it=inventory.find(i=>i.id===id);
+  if(!it){ toast('Item not found','warning'); return; }
+  if(id==='oxygen_tank'){
+    addOxygen(50);
+    removeFromInventory(id);
+    toast('+50 Oxygen','success');
+    log('Used Oxygen Tank. +50 O₂','ok');
+  } else if(id==='medkit'){
+    addHealth(40);
+    removeFromInventory(id);
+    toast('+40 Health','success');
+    log('Used Med Kit. +40 health','ok');
+  } else if(id==='suit_patch'){
+    player.suit=clamp(player.suit+40,0,100);
+    removeFromInventory(id);
+    toast('+40 Suit integrity','success');
+    log('Applied suit patch.','ok');
+  } else if(id==='oxygen_canister'){
+    addOxygen(25);
+    removeFromInventory(id);
+    toast('+25 Oxygen','success');
+    log('Used O₂ canister. +25','ok');
+  } else {
+    toast('Cannot use: '+it.name,'warning');
+  }
+}
+
+/* Add click-to-use on inventory slots */
+document.getElementById('invGrid').addEventListener('click',(e)=>{
+  const slot=e.target.closest('.inv-slot');
+  if(!slot)return;
+  const idx=parseInt(slot.dataset.idx);
+  if(inventory[idx]) useItem(inventory[idx].id);
 });
 
-/* =========================
-   Start
-   ========================= */
-init();
+/* ================================================================
+   SECTION 32 — UI WIRING
+   ================================================================ */
+document.getElementById('btnMission').addEventListener('click',()=>{
+  if(!missionActive){
+    startMission();
+    document.getElementById('splash').style.display='none';
+  }
+});
+document.getElementById('btnInventory').addEventListener('click',()=>toggleInventory());
+document.getElementById('btnCraft').addEventListener('click',()=>toggleCraft());
+document.getElementById('btnSave').addEventListener('click',saveGame);
+document.getElementById('btnLoad').addEventListener('click',loadGame);
+document.getElementById('btnReset').addEventListener('click',()=>{
+  if(confirm('Reset game? All progress will be lost.')){
+    localStorage.removeItem('milesmars_v2');
+    location.reload();
+  }
+});
+document.getElementById('btnSplashPlay').addEventListener('click',()=>{
+  document.getElementById('splash').style.display='none';
+  canvas3d.requestPointerLock();
+  startMission();
+});
+document.getElementById('btnSplashHow').addEventListener('click',()=>{
+  alert(
+    'HOW TO PLAY — MilesMars\n\n'+
+    'WASD — Move\n'+
+    'SHIFT — Sprint (drains stamina)\n'+
+    'SPACE — Jump\n'+
+    'E — Interact / Collect\n'+
+    'V — Enter/exit rover\n'+
+    'I — Inventory (click items to use)\n'+
+    'C — Crafting menu\n'+
+    'Mouse — Look around\n\n'+
+    'OBJECTIVE: Collect all 6 Data Cores and return to Base Camp.\n'+
+    'Watch your Oxygen — it drains constantly. Collect crates and use\n'+
+    'beacons to replenish. Craft med kits and oxygen tanks from cores.\n'+
+    'Dust storms increase drain — seek shelter or move fast!\n\n'+
+    'P — Quick save | L — Load save'
+  );
+});
+document.getElementById('btnCloseInv').addEventListener('click',()=>toggleInventory(false));
+document.getElementById('btnDropAll').addEventListener('click',()=>{
+  inventory=[];
+  renderInventory();
+  log('Dropped all items.','warn');
+});
+document.getElementById('btnOpenCraftFromInv').addEventListener('click',()=>{
+  toggleInventory(false);
+  toggleCraft(true);
+});
+document.getElementById('btnCloseCraft').addEventListener('click',()=>toggleCraft(false));
+document.getElementById('btnExitVehicle').addEventListener('click',exitVehicle);
+document.getElementById('btnRespawn').addEventListener('click',respawn);
 
-/* =========================
-   Large safe filler content to increase file length while keeping functionality
-   ============================================================================================================
-   The following blocks are intentionally verbose, safe, and non-harmful. They include helper utilities,
-   repeated comment blocks, and no-op computations to inflate the file size. They do not affect runtime logic.
-   ============================================================================================================
-*/
+/* ================================================================
+   SECTION 33 — RESIZE
+   ================================================================ */
+window.addEventListener('resize',()=>{
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+  resizeWeatherCanvas();
+});
 
-/* repeated helper utilities */
-function vecCopy(a){ return new THREE.Vector3(a.x,a.y,a.z); }
-function vecSet(v,x,y,z){ v.x=x; v.y=y; v.z=z; return v; }
-function vecAdd(a,b){ return new THREE.Vector3(a.x+b.x,a.y+b.y,a.z+b.z); }
-function vecSub(a,b){ return new THREE.Vector3(a.x-b.x,a.y-b.y,a.z-b.z); }
-function vecScale(a,s){ return new THREE.Vector3(a.x*s,a.y*s,a.z*s); }
-function vecLen(a){ return Math.sqrt(a.x*a.x + a.y*a.y + a.z*a.z); }
-function vecNormalize(a){ const l=vecLen(a); if(l===0) return new THREE.Vector3(0,0,0); return vecScale(a,1/l); }
-
-/* heavy no-op functions */
-function heavyNoOp1(){ for(let i=0;i<120;i++){ Math.sqrt(i*123.456); } return true; }
-function heavyNoOp2(){ let s=''; for(let i=0;i<200;i++){ s += String.fromCharCode(65 + (i%26)); } return s; }
-function heavyNoOp3(){ const arr=[]; for(let i=0;i<300;i++){ arr.push({i:i, v:Math.random()}); } return arr; }
-
-/* repeated comment blocks to inflate file size safely */
-/*
-  ============================================================================================================
-  NOTE: This file contains intentionally verbose comments and helper stubs to emulate a large codebase.
-  In production, split into modules, optimize geometry generation, and use asset pipelines for models and audio.
-  ============================================================================================================
-*/
-
-/* duplicate safe blocks (repeated many times) */
-(function inflateComments(){
-  // block A
-  // block B
-  // block C
-  // block D
-  // block E
-  // block F
-  // block G
-  // block H
-  // block I
-  // block J
-})();
-
-/* repeat no-op loops to increase length but keep responsiveness */
-for(let i=0;i<6;i++){
-  heavyNoOp1();
-  heavyNoOp2();
-  heavyNoOp3();
+/* ================================================================
+   SECTION 34 — INIT
+   ================================================================ */
+function init(){
+  log('Generating terrain (seed: '+CFG.SEED+')...');
+  generateTerrain();
+  log('Building base camp...');
+  buildBaseCamp();
+  log('Spawning environment...');
+  spawnRocks();
+  spawnBeacons();
+  createDustField();
+  buildAtmosphere();
+  log('Deploying colonists and vehicles...');
+  spawnNPCs();
+  spawnVehicles();
+  spawnCrates();
+  log('Creating pilot...');
+  createPlayer();
+  // Place player near base
+  const by=sampleHeight(basePos.x+5,basePos.z+5);
+  player.pos.set(basePos.x+5,by+2,basePos.z+5);
+  player.group.position.copy(player.pos);
+  log('MilesMars ready. Click canvas to lock mouse.','ok');
+  initInventoryUI();
+  // Starter items
+  addItemToInventory({id:'data_chip',name:'Data Chip',icon:'💿',qty:2});
+  addItemToInventory({id:'oxygen_canister',name:'O₂ Canister',icon:'🫧',qty:1});
 }
 
-/* more filler functions */
-function safeUtilityA(){ let s=0; for(let i=0;i<500;i++){ s += Math.sin(i)*Math.cos(i); } return s; }
-function safeUtilityB(){ const arr=[]; for(let i=0;i<200;i++){ arr.push(i*i); } return arr; }
-function safeUtilityC(){ return {time:Date.now(), seed:CONFIG.seed, version:'1.0.0'}; }
+/* ================================================================
+   SECTION 35 — GAME LOOP
+   ================================================================ */
+let lastT=now();
+let frameCount=0;
 
-/* final repeated comment block */
- /*
-  ============================================================================================================
-  End of filler content. The core game logic is above. UI buttons are wired and functional.
-  ============================================================================================================
- */
+function gameLoop(){
+  requestAnimationFrame(gameLoop);
+  const t=now();
+  const dt=clamp(t-lastT,0,0.055);
+  lastT=t;
+  frameCount++;
 
+  if(!player.alive)return;
+
+  // Core systems
+  updatePlayer(dt);
+  updateVehicles(dt);
+  updateVitals(dt);
+  updateMission(dt);
+  updateBeacons(dt);
+  updateNPCs(dt);
+  updateParticles(dt);
+  updateDust(dt,stormIntensity);
+  updateInteractPrompt(dt);
+  tickAutosave(dt);
+
+  // Animate sun (slow cycle)
+  const sunAngle=t*0.008;
+  sunLight.position.set(
+    Math.cos(sunAngle)*800,
+    Math.sin(sunAngle)*900+200,
+    Math.sin(sunAngle*0.5)*400
+  );
+  sunLight.intensity=clamp(0.4+Math.sin(sunAngle)*0.75,0.1,1.15);
+  // Sky color changes with sun height
+  const dayFac=clamp((Math.sin(sunAngle)+0.3)*1.2,0,1);
+  scene.background=new THREE.Color().setHSL(0.02,0.65,0.03+dayFac*0.05);
+
+  // Camera
+  if(!player.inVehicle) updateCamera(dt);
+
+  // HUD
+  updateHUD();
+  updateMinimap();
+  updateWeatherOverlay();
+
+  // Fog density increases during storm
+  scene.fog.density=CFG.FOG_DENSITY+(stormIntensity*0.003);
+
+  renderer.render(scene,camera);
+}
+
+/* ================================================================
+   SECTION 36 — CRATE PROXIMITY INTERACTION HELPER
+   ================================================================ */
+function updateCrateProximity(){
+  crateGroup.traverse(crate=>{
+    if(!crate.userData||!crate.userData.interactable)return;
+    const d=crate.position.distanceTo(player.pos);
+    if(d<3){
+      showInteractPrompt(crate.userData.label||'Collect');
+      if(keys['KeyE']){
+        crate.userData.onInteract&&crate.userData.onInteract();
+        keys['KeyE']=false;
+      }
+    }
+  });
+}
+
+/* Patch mission update to also check crates */
+const _origUpdateMission=updateMission;
+function updateMissionFull(dt){
+  _origUpdateMission(dt);
+  updateCrateProximity();
+}
+
+/* ================================================================
+   SECTION 37 — PARTICLE EMITTERS (AMBIENT VENTS)
+   ================================================================ */
+const ventEmitters=[];
+function spawnVents(){
+  const half=CFG.TERRAIN_SIZE/2-100;
+  for(let i=0;i<12;i++){
+    const rx=rand(-half,half);
+    const rz=rand(-half,half);
+    const ry=sampleHeight(rx,rz);
+    ventEmitters.push({x:rx,y:ry,z:rz,timer:rand(0,3),interval:rand(2,6)});
+
+    // Vent visual
+    const vGeo=new THREE.CylinderGeometry(0.3,0.5,0.4,8);
+    const vMat=new THREE.MeshStandardMaterial({color:0x444444,roughness:0.8,metalness:0.6});
+    const vent=new THREE.Mesh(vGeo,vMat);
+    vent.position.set(rx,ry+0.2,rz);
+    scene.add(vent);
+  }
+}
+
+function updateVents(dt){
+  for(const v of ventEmitters){
+    v.timer-=dt;
+    if(v.timer<=0){
+      v.timer=v.interval+rand(-0.5,0.5);
+      spawnParticles(v.x,v.y+0.5,v.z,0xccaaff,8,0.5,1.5);
+    }
+  }
+}
+
+/* ================================================================
+   SECTION 38 — ENVIRONMENT SOUNDS (WEB AUDIO)
+   ================================================================ */
+let audioCtx=null;
+let windGain=null;
+let windNoise=null;
+
+function initAudio(){
+  try{
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    windGain=audioCtx.createGain();
+    windGain.gain.value=0.0;
+    windGain.connect(audioCtx.destination);
+
+    // Wind: bandpass-filtered white noise
+    const bufSize=2*audioCtx.sampleRate;
+    const buffer=audioCtx.createBuffer(1,bufSize,audioCtx.sampleRate);
+    const data=buffer.getChannelData(0);
+    for(let i=0;i<bufSize;i++) data[i]=(Math.random()*2-1);
+    windNoise=audioCtx.createBufferSource();
+    windNoise.buffer=buffer;
+    windNoise.loop=true;
+    const bp=audioCtx.createBiquadFilter();
+    bp.type='bandpass';
+    bp.frequency.value=220;
+    bp.Q.value=0.5;
+    windNoise.connect(bp);
+    bp.connect(windGain);
+    windNoise.start();
+
+    // Heartbeat when oxygen low
+    window._mmAudio={audioCtx,windGain};
+  }catch(e){}
+}
+
+function updateAudio(){
+  if(!windGain)return;
+  const targetVol=0.015+stormIntensity*0.12;
+  windGain.gain.value=lerp(windGain.gain.value,targetVol,0.02);
+}
+
+/* ================================================================
+   SECTION 39 — INTERACTIVE HINT MARKER DOTS (DOM)
+   ================================================================ */
+const hintMarkers=[];
+
+function createHintMarker(beacon){
+  const el=document.createElement('div');
+  el.style.cssText='position:fixed;pointer-events:none;z-index:35;transform:translate(-50%,-50%);transition:opacity 0.2s;';
+  el.innerHTML=`<div style="width:10px;height:10px;border-radius:50%;background:rgba(255,120,60,0.9);box-shadow:0 0 14px rgba(255,120,60,0.8);"></div>`;
+  document.body.appendChild(el);
+  hintMarkers.push({el,beacon});
+}
+
+function updateHintMarkers(){
+  for(const hm of hintMarkers){
+    const b=hm.beacon;
+    if(b.collected){hm.el.style.opacity='0';continue;}
+    const s=worldToScreen(b.pos.x,b.pos.y+3.5,b.pos.z,camera);
+    if(s.z>1||s.z<0.01){hm.el.style.opacity='0';continue;}
+    hm.el.style.opacity='0.85';
+    hm.el.style.left=s.x+'px';
+    hm.el.style.top=s.y+'px';
+  }
+}
+
+/* ================================================================
+   SECTION 40 — FINAL INIT + LOOP START
+   ================================================================ */
+init();
+spawnVents();
+initAudio();
+for(const b of beacons) createHintMarker(b);
+
+// Patch game loop to include all updates
+function fullLoop(){
+  requestAnimationFrame(fullLoop);
+  const t=now();
+  const dt=clamp(t-lastT,0,0.055);
+  lastT=t;
+  frameCount++;
+
+  if(player.alive){
+    updatePlayer(dt);
+    updateVehicles(dt);
+    updateVitals(dt);
+    updateMissionFull(dt);
+    updateBeacons(dt);
+    updateNPCs(dt);
+    updateParticles(dt);
+    updateVents(dt);
+    updateDust(dt,stormIntensity);
+    updateInteractPrompt(dt);
+    updateAudio();
+    tickAutosave(dt);
+
+    const sunAngle=t*0.008;
+    sunLight.position.set(
+      Math.cos(sunAngle)*800,
+      Math.sin(sunAngle)*900+200,
+      Math.sin(sunAngle*0.5)*400
+    );
+    sunLight.intensity=clamp(0.4+Math.sin(sunAngle)*0.75,0.1,1.15);
+    const dayFac=clamp((Math.sin(sunAngle)+0.3)*1.2,0,1);
+    scene.background=new THREE.Color().setHSL(0.02,0.65,0.03+dayFac*0.05);
+    scene.fog.density=CFG.FOG_DENSITY+(stormIntensity*0.003);
+
+    if(!player.inVehicle) updateCamera(dt);
+  }
+
+  updateHUD();
+  updateMinimap();
+  updateWeatherOverlay();
+  updateHintMarkers();
+
+  renderer.render(scene,camera);
+}
+
+// Start the full loop instead
+cancelAnimationFrame(0);
+fullLoop();
+
+/* ================================================================
+   EOF — MilesMars  |  Total sections: 40
+   ================================================================ */
 </script>
 </body>
 </html>
